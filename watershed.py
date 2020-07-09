@@ -29,7 +29,7 @@ USE_GAS = False
 
 DEBUG = True
 PRINTS_ON = True
-CROOKS_MODE = True
+CROOKS_MODE = False #True
 ACCOUNT_FOR_SLUMP = True
 WARM_UP_LEVEL_SENSOR = True
 
