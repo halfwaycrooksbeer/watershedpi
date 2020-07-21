@@ -135,7 +135,7 @@ class SensorBase():
 	
 
 class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitter
-	L_PIN = A0
+	L_PIN = A2  #A0
 	MA4  = ( 178, 375 )  #392 }; // Raw analog input value range that corresponds to ~4 mA (EMPTY)
 	MA12 = ( 640, 652 ) 	#    // Raw analog input value range that corresponds to ~12 mA (MIDTANK)
 	MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
