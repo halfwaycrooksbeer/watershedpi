@@ -34,16 +34,7 @@ ACCOUNT_FOR_SLUMP = True
 WARM_UP_LEVEL_SENSOR = True
 
 GID = "AKfycbwcei1kWqE1zLnNm2lciSfsJhxnNFaKASewn29hSIBjGAKZ3m-f"
-# GAS_SERVER = "script.google.com"
 URL = "https://script.google.com/macros/s/{0}/exec?{1}"
-
-# https://script.google.com/macros/s/AKfycbxOCSw2DRtMiLvJ9ZEsUTOKv3RkBiNFAOMvYZ1mlA/exec
-
-# sample_payload = "json=%7b%223%2F19%2F2020%2C10%3A38%3A34+AM%22%3A%222.13%2C0.71%2C6.17%22%2C%223%2F19%2F2020%2C10%3A38%3A50+AM%22%3A%222.13%2C0.71%2C6.17%22%2C%223%2F19%2F2020%2C10%3A39%3A06+AM%22%3A%222.16%2C0.75%2C6.17%22%2C%223%2F19%2F2020%2C10%3A39%3A22+AM%22%3A%222.17%2C0.77%2C6.17%22%2C%223%2F19%2F2020%2C10%3A39%3A39+AM%22%3A%222.16%2C0.75%2C6.17%22%2C%223%2F19%2F2020%2C10%3A39%3A55+AM%22%3A%222.18%2C0.78%2C6.19%22%2C%223%2F19%2F2020%2C10%3A40%3A11+AM%22%3A%222.28%2C0.93%2C6.19%22%2C%223%2F19%2F2020%2C10%3A40%3A27+AM%22%3A%222.36%2C1.06%2C6.19%22%2C%223%2F19%2F2020%2C10%3A40%3A43+AM%22%3A%222.46%2C1.20%2C6.17%22%2C%223%2F19%2F2020%2C10%3A40%3A59+AM%22%3A%222.51%2C1.29%2C6.17%22%2C%223%2F19%2F2020%2C10%3A41%3A15+AM%22%3A%222.56%2C1.35%2C6.17%22%2C%223%2F19%2F2020%2C10%3A41%3A31+AM%22%3A%222.57%2C1.37%2C6.17%22%2C%223%2F19%2F2020%2C10%3A41%3A47+AM%22%3A%222.56%2C1.36%2C6.17%22%2C%223%2F19%2F2020%2C10%3A42%3A03+AM%22%3A%222.53%2C1.31%2C6.17%22%2C%223%2F19%2F2020%2C10%3A42%3A19+AM%22%3A%222.49%2C1.25%2C6.19%22%2C%223%2F19%2F2020%2C10%3A42%3A35+AM%22%3A%222.42%2C1.15%2C6.17%22%2C%223%2F19%2F2020%2C10%3A42%3A51+AM%22%3A%222.35%2C1.04%2C6.17%22%2C%223%2F19%2F2020%2C10%3A43%3A08+AM%22%3A%222.33%2C1.00%2C6.17%22%2C%223%2F19%2F2020%2C10%3A43%3A24+AM%22%3A%222.31%2C0.97%2C6.17%22%2C%223%2F19%2F2020%2C10%3A43%3A40+AM%22%3A%222.32%2C0.99%2C6.19%22%7d"
-
-# col_headers = ["DateTime", "Level (inches)", "pH"]
-# col_data = ["levelData", "phData"]
-
 
 ## ADS1x15 values
 ADS_TYPE = 1015
@@ -138,7 +129,7 @@ class SensorBase():
 	
 
 class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitter
-	L_PIN = A2  #A0
+	L_PIN = A0
 	MA4  = ( 178, 375 )  #392 }; // Raw analog input value range that corresponds to ~4 mA (EMPTY)
 	MA12 = ( 640, 652 ) 	#    // Raw analog input value range that corresponds to ~12 mA (MIDTANK)
 	MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
@@ -197,11 +188,11 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 	def readSensor(self):
 		global flume_state
 		v = self.voltage
-		if v > 4.8:
+		if v > 5:
 			flume_state = WARNING
 			parseflume_state()
 			if DEBUG:
-				print("\n!~~! OVERVOLTAGE WARNING !~~!\n")
+				print("!~~! OVERVOLTAGE WARNING !~~!\n")
 
 		# l_raw = V2RAW(v)
 		l_raw = self.araw
@@ -285,8 +276,13 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 
 class PHSensor(SensorBase): 	## PH500
 	P_PIN = A1
-	V_MIN = 1.0		## 1 Volt ~~ 0.5 pH
-	V_MAX = 5.0 	## 5 Volts == 20mA
+	V_MIN = 1.008		## 1 Volt ~~ 0.5 pH
+	V_MAX = 5.008 	## 5 Volts == 20mA
+
+	PH_SLOPE = 3.46820809
+	PH_INTERCEPT = 3.3807514
+	#PH_OFFSET = 6.7997
+	PH_OFFSET = 6.8138  #  091
 
 	def __init__(self, ads=None):
 		# super().__init__(analog_in.AnalogIn(adc, pin))
@@ -304,6 +300,14 @@ class PHSensor(SensorBase): 	## PH500
 
 	@property
 	def pH(self):
+		x = self.voltage  #._value
+		m = self.PH_SLOPE
+		b = self.PH_INTERCEPT
+		y = (m * x) + b
+		return float(y - self.PH_OFFSET)
+
+	@property
+	def old_pH(self):
 		pH_mv_max = PHSensor.V_MAX * 1000
 		pH_mv_min = PHSensor.V_MIN * 1000
 		mv = self.voltage * 1000
