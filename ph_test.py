@@ -7,6 +7,9 @@ N_CALIB_SAMPLES = 32
 S_CALIB_DELAY = 1
 DATA_STRF = "pH: {:.3f}  |  voltage: {:.3f} V  |  aIn: {:.3f}"
 
+m = 0	## Slope for pH function
+b = 0 	## Intercept for pH function
+
 def _read(sensor):
 	pH = sensor.pH
 	voltage = sensor.voltage
@@ -19,9 +22,7 @@ def poll_sensor(sensor):
 			p, v, a = _read(sensor)
 			ts = dt.now().strftime("%m/%d/%Y,%I:%M:%S %p")
 			poll_str = "[{}]\t{}".format(ts, DATA_STRF.format(p, v, a))
-			# print("[{}]    pH = {:.2f}  |  voltage = {:.2f} V  |  ain = {:.2f}".format(ts, p, v, a))
 			print(poll_str)
-			# return pH, voltage
 			sleep(1)
 		except KeyboardInterrupt:
 			return
@@ -51,11 +52,27 @@ def calibrate_pH_7(sensor):
 def calibrate_pH_10(sensor):
 	_calib(sensor, 10.01)
 
+def get_slope_and_intercept(ph4_value, ph7_value):
+	global m, b
+	## y-axis is pH from 0-14, x-axis is analog value corresponding to pH (could also use voltage?)
+	m = ((4.01 - 7.01) / (ph4_value - ph7_value))
+	b = (m * ph7_value) - 7.01
+	return m, b
+
+def get_pH_from_ain(x):
+	if m == 0:
+		print("[get_pH_from_ain]  Need to calibrate for pH 4.01 & 7.01, then call get_slope_and_intercept()")
+		return -1
+	y = (m * x) + b
+	return y
+
 tests = {
 	1 : poll_sensor,
 	2 : calibrate_pH_4,
 	3 : calibrate_pH_7,
-	4 : calibrate_pH_10
+	4 : calibrate_pH_10,
+	5 : get_slope_and_intercept,
+	6 : get_pH_from_ain
 }
 
 def menu_select():
@@ -83,4 +100,16 @@ if __name__ == "__main__":
 	n = None
 	while n is None:
 		n = menu_select()
-	tests[n](pH500)
+	if n == 5:
+		ph4 = float(input('Enter the mean analog value for pH 4.01:  '))
+		ph7 = float(input('Enter the mean analog value for pH 7.01:  '))
+		slope, intercept = tests[n](ph4, ph7)
+		print('\nSlope (m):  {}\ny-Intercept (b):  {}'.format(slope, intercept))
+	elif n == 6:
+		analog_val = pH500._value
+		ph_from_ain = tests[n](analog_val)
+		print('\nanalog_val = {}  -->  pH = {}'.format(analog_val, ph_from_ain))
+	else:
+		tests[n](pH500)
+
+
