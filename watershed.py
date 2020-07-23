@@ -285,7 +285,7 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 
 class PHSensor(SensorBase): 	## PH500
 	P_PIN = A1
-	V_MIN = 0.01 #1.0		## 1 Volt ~~ 0.5 pH
+	V_MIN = 1.0		## 1 Volt ~~ 0.5 pH
 	V_MAX = 5.0 	## 5 Volts == 20mA
 
 	def __init__(self, ads=None):
