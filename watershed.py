@@ -44,7 +44,10 @@ URL = "https://script.google.com/macros/s/{0}/exec?{1}"
 # col_headers = ["DateTime", "Level (inches)", "pH"]
 # col_data = ["levelData", "phData"]
 
-## ADS1015 values
+
+## ADS1x15 values
+ADS_TYPE = 1015
+#ADS_TYPE = 1115
 ADC_ADDR = 0x48
 ADC_GAIN = (2/3) 	## 2/3 = +/-6.144V AC readings from A0-3
 A0 = 0
@@ -141,9 +144,17 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 	MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
 	MA22 = 1023	        	#    // Raw analog input value equivalent to 22 mA (OVERFILL)
 
-	def __init__(self):
+	def __init__(self, ads=None):
 		# super().__init__(analog_in.AnalogIn(adc, pin))
-		super().__init__(analog_in.AnalogIn(adc, LevelSensor.L_PIN))
+		if ads is None:
+			if not adc is None:
+				ads = adc
+			else:
+				if ADS_TYPE == 1015:
+					ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				else:
+					ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+		super().__init__(analog_in.AnalogIn(ads, LevelSensor.L_PIN))
 		self.history = [0.0] * NSAMPLES
 		self._sampleCnt = 0
 		self._idx = 0
@@ -274,12 +285,22 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 
 class PHSensor(SensorBase): 	## PH500
 	P_PIN = A1
-	V_MIN = 1.0		## 1 Volt ~~ 0.5 pH
+	V_MIN = 0.01 #1.0		## 1 Volt ~~ 0.5 pH
 	V_MAX = 5.0 	## 5 Volts == 20mA
 
-	def __init__(self):
+	def __init__(self, ads=None):
 		# super().__init__(analog_in.AnalogIn(adc, pin))
-		super().__init__(analog_in.AnalogIn(adc, PHSensor.P_PIN))
+		if ads is None:
+			if not adc is None:
+				ads = adc
+			else:
+				#if i2c is None:
+				#	i2c = busio.I2C(board.SCL, board.SDA)
+				if ADS_TYPE == 1015:
+					ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				else:
+					ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+		super().__init__(analog_in.AnalogIn(ads, PHSensor.P_PIN))
 
 	@property
 	def pH(self):
@@ -326,11 +347,14 @@ def setup():
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
 		if adc is None:
-			adc = ads1015.ADS1015(i2c, gain=ADC_GAIN, address=ADC_ADDR)
+			if ADS_TYPE == 1015:
+				adc = ads1015.ADS1015(i2c, gain=ADC_GAIN, address=ADC_ADDR)
+			else:
+				adc = ads1115.ADS1115(i2c, gain=ADC_GAIN, address=ADC_ADDR)
 		if p_sensor is None:
-			p_sensor = PHSensor()
+			p_sensor = PHSensor(ads=adc)
 		if l_sensor is None:
-			l_sensor = LevelSensor()
+			l_sensor = LevelSensor(ads=adc)
 		data = dict()
 		initialized = True
 
@@ -461,215 +485,215 @@ def get_dt_obj_from_entry_time(et=entry_time):
 ## LAUNCHER
 ###############################################################################
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 	
-tries = 0
-while not network_connected():
-	print('Not connected ...')
-	tries += 1
-	if (tries > 4):
-		print("[ERROR] Could not connect to network!")
-		sys.exit(1)
-	time.sleep(3)
+	tries = 0
+	while not network_connected():
+		print('Not connected ...')
+		tries += 1
+		if (tries > 4):
+			print("[ERROR] Could not connect to network!")
+			sys.exit(1)
+		time.sleep(3)
 
-print('Connected.')
+	print('Connected.')
 
-setup()
+	setup()
 	
-# test_str = "[{}]\tLevel: {:3.2f} in\n\tpH   : {:3.2f}\n"
+	# test_str = "[{}]\tLevel: {:3.2f} in\n\tpH   : {:3.2f}\n"
 
-# global last_update
-last_update = time.time() 	## Time in seconds since the epoch, as a floating point number
+	# global last_update
+	last_update = time.time() 	## Time in seconds since the epoch, as a floating point number
 
-if USE_GAS:
-	while True:
-		# global entry_time, updates, payload
-		try:
-			payload = 'json={'
-			updates = 0
-			while updates < JSON_CAPACITY:
-				if (time.time() - last_update) >= INTERVAL:
-					entry_time = getTimestamp()
-					level = l_sensor.level
-					pH = p_sensor.pH
+	if USE_GAS:
+		while True:
+			# global entry_time, updates, payload
+			try:
+				payload = 'json={'
+				updates = 0
+				while updates < JSON_CAPACITY:
+					if (time.time() - last_update) >= INTERVAL:
+						entry_time = getTimestamp()
+						level = l_sensor.level
+						pH = p_sensor.pH
 
-					# if PRINTS_ON:
-					# 	print(test_str.format(entry_time, level, pH))
-					payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
+						# if PRINTS_ON:
+						# 	print(test_str.format(entry_time, level, pH))
+						payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
 					
-					updates += 1
-					if updates != JSON_CAPACITY:
-						payload += ','
-					elif payload[-1] != '}':
-						payload += '}'
+						updates += 1
+						if updates != JSON_CAPACITY:
+							payload += ','
+						elif payload[-1] != '}':
+							payload += '}'
 
-					displayValuesToSerial(pH, level)
-					last_update = time.time()
-				time.sleep(0.1)
+						displayValuesToSerial(pH, level)
+						last_update = time.time()
+					time.sleep(0.1)
 
-			encode_payload()
-			if PRINTS_ON:
-				print("Sending payload: " + payload)
+				encode_payload()
+				if PRINTS_ON:
+					print("Sending payload: " + payload)
 
-			send_payload()
+				send_payload()
 
-		except KeyboardInterrupt:
-			break
-else:
-	sm = sheet_manager.SheetManager()
-	# sm2 = sheet_manager.SheetManager()
-	# if not sm is sm2:
-	# 	print("SheetManager is not a true Singleton :(")
-	# else:
-	# 	print("SheetManager is a true Singleton :)")
-	# del(sm2)
-
-	# seconds_delta = dt.timedelta(seconds=INTERVAL)
-	# final_month = sm.cursheet_end_date.month 
-	entry_time = getTimestamp()
-	entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
-	prev_entry_time_obj = entry_time_obj
-
-
-	initial_results_date_check_made = False 
-	try:
-		last_date_published = sm.get_last_date_processed()
-	except:
-		last_date_published = None
-	last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
-	# if last_date_published is not None:
-	# 	print("\n sm.get_last_date_processed():  '{}'\n sheet_manager.get_last_published_date():  '{}'\n".format(last_date_published, last_published_date))
-	if last_published_date is None:
-		if last_date_published is not None and last_date_published != "Date":
-			sheet_manager.log_published_date(last_date_published)
-		else:
-			# sheet_manager.log_published_date(dt.datetime(2020, 4, 1).strftime(sheet_manager.FULL_DATE_FORMAT))
-			sheet_manager.log_published_date((sheet_manager.get_datetime_now() - dt.timedelta(days=1)).strftime(sheet_manager.FULL_DATE_FORMAT))
-		last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
-	if last_date_published is not None and last_published_date != last_date_published:
-		last_published_date = last_date_published
+			except KeyboardInterrupt:
+				break
 	else:
-		print("\t|  LAST RESULTS FOUND FOR {}  |\n".format(last_published_date))
+		sm = sheet_manager.SheetManager()
+		# sm2 = sheet_manager.SheetManager()
+		# if not sm is sm2:
+		# 	print("SheetManager is not a true Singleton :(")
+		# else:
+		# 	print("SheetManager is a true Singleton :)")
+		# del(sm2)
+
+		# seconds_delta = dt.timedelta(seconds=INTERVAL)
+		# final_month = sm.cursheet_end_date.month 
+		entry_time = getTimestamp()
+		entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
+		prev_entry_time_obj = entry_time_obj
 
 
-	while True:
+		initial_results_date_check_made = False 
 		try:
-			# data = dict()
-			payload = list()
-			updates = 0
-			end_date_reached = False
-			end_of_day_reached = False
-			while updates < JSON_CAPACITY and not end_date_reached:
-				if (time.time() - last_update) >= INTERVAL:
-					entry_time = getTimestamp()
+			last_date_published = sm.get_last_date_processed()
+		except:
+			last_date_published = None
+		last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
+		# if last_date_published is not None:
+		# 	print("\n sm.get_last_date_processed():  '{}'\n sheet_manager.get_last_published_date():  '{}'\n".format(last_date_published, last_published_date))
+		if last_published_date is None:
+			if last_date_published is not None and last_date_published != "Date":
+				sheet_manager.log_published_date(last_date_published)
+			else:
+				# sheet_manager.log_published_date(dt.datetime(2020, 4, 1).strftime(sheet_manager.FULL_DATE_FORMAT))
+				sheet_manager.log_published_date((sheet_manager.get_datetime_now() - dt.timedelta(days=1)).strftime(sheet_manager.FULL_DATE_FORMAT))
+			last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
+		if last_date_published is not None and last_published_date != last_date_published:
+			last_published_date = last_date_published
+		else:
+			print("\t|  LAST RESULTS FOUND FOR {}  |\n".format(last_published_date))
 
-					## Detect change in day (roll-over) for computing daily flow results
-					entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
-					if prev_entry_time_obj.day != entry_time_obj.day:
-						end_of_day_reached = True
-						# prev_entry_time_obj = entry_time_obj
-						# break
 
-					## For when program has missed several days since last running
-					if not initial_results_date_check_made and '/' in last_published_date:
-						m, d, y = last_published_date.split('/')
-						if len(y) == 2:
-							y = "20" + y
-						last_dt_obj = dt.datetime(int(y), int(m), int(d))
+		while True:
+			try:
+				# data = dict()
+				payload = list()
+				updates = 0
+				end_date_reached = False
+				end_of_day_reached = False
+				while updates < JSON_CAPACITY and not end_date_reached:
+					if (time.time() - last_update) >= INTERVAL:
+						entry_time = getTimestamp()	
+
+						## Detect change in day (roll-over) for computing daily flow results
+						entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						if prev_entry_time_obj.day != entry_time_obj.day:
+							end_of_day_reached = True
+							# prev_entry_time_obj = entry_time_obj
+							# break
+
+						## For when program has missed several days since last running
+						if not initial_results_date_check_made and '/' in last_published_date:
+							m, d, y = last_published_date.split('/')
+							if len(y) == 2:
+								y = "20" + y
+							last_dt_obj = dt.datetime(int(y), int(m), int(d))
 						
-						# if last_dt_obj < entry_time_obj:
-						# entry_date = entry_time_obj.date
-						entry_date = sheet_manager.get_date_today()
-						this_dt = dt.datetime(entry_date.year, entry_date.month, entry_date.day)
-						# check_cnt = 1
-						# one_day = dt.timedelta(days=1)
-						# print("this_dt:  {}".format(this_dt))
-						while last_dt_obj < this_dt:  # and last_dt_obj < (this_dt - one_day):  # entry_time_obj:
-							# print("last_dt_obj:  {}".format(last_dt_obj))
-							try:
-								sm.get_results(last_dt_obj)
-							except:
-								print("\n[watershed] APIError caught for too many read requests, discontinuing search for missed dates.\n")
-								time.sleep(2)
-								break
-							last_dt_obj = get_tomorrow(today=last_dt_obj)
-							time.sleep(1)
-							# time.sleep(check_cnt)
-							# check_cnt += 1
-						print("\n")
-						initial_results_date_check_made = True
+							# if last_dt_obj < entry_time_obj:
+							# entry_date = entry_time_obj.date
+							entry_date = sheet_manager.get_date_today()
+							this_dt = dt.datetime(entry_date.year, entry_date.month, entry_date.day)
+							# check_cnt = 1
+							# one_day = dt.timedelta(days=1)
+							# print("this_dt:  {}".format(this_dt))
+							while last_dt_obj < this_dt:  # and last_dt_obj < (this_dt - one_day):  # entry_time_obj:
+								# print("last_dt_obj:  {}".format(last_dt_obj))
+								try:
+									sm.get_results(last_dt_obj)
+								except:
+									print("\n[watershed] APIError caught for too many read requests, discontinuing search for missed dates.\n")
+									time.sleep(2)
+									break
+								last_dt_obj = get_tomorrow(today=last_dt_obj)
+								time.sleep(1)
+								# time.sleep(check_cnt)
+								# check_cnt += 1
+							print("\n")
+							initial_results_date_check_made = True
 
 
-					## Sufficient?
-					dt_now = sheet_manager.get_datetime_now()
-					if dt_now > sm.cursheet_end_date:
-						print("dt.datetime.now() > sm.cursheet_end_date")
-						print("\ttoday   :\t{}".format(dt_now))
-						print("\tend date:\t{}".format(sm.cursheet_end_date))
-						end_date_reached = True
-						# break
+						## Sufficient?
+						dt_now = sheet_manager.get_datetime_now()
+						if dt_now > sm.cursheet_end_date:
+							print("dt.datetime.now() > sm.cursheet_end_date")
+							print("\ttoday   :\t{}".format(dt_now))
+							print("\tend date:\t{}".format(sm.cursheet_end_date))
+							end_date_reached = True
+							# break
 
-					## Redundant?
-					if sm.need_newsheet_check(entry_time=entry_time):
-						print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
-						end_date_reached = True
-						# break
+						## Redundant?
+						if sm.need_newsheet_check(entry_time=entry_time):
+							print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
+							end_date_reached = True
+							# break
 
-					if end_of_day_reached or end_date_reached:
-						break
+						if end_of_day_reached or end_date_reached:
+							break
 
-					level = round(l_sensor.level, 3)
-					pH = round(p_sensor.pH, 2)
+						level = round(l_sensor.level, 3)
+						pH = round(p_sensor.pH, 2)
 
-					# payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
-					# data.update({ entry_time : { "l" : level, "p" : pH	} })
-					payload.append({ entry_time : { "l" : level, "p" : pH	} })
-					updates += 1
+						# payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
+						# data.update({ entry_time : { "l" : level, "p" : pH	} })
+						payload.append({ entry_time : { "l" : level, "p" : pH	} })
+						updates += 1	
 
-					displayValuesToSerial(pH, level)
-					last_update = time.time()
+						displayValuesToSerial(pH, level)
+						last_update = time.time()
 
-					# ## Detect change in day for computing daily flow results
-					# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
-					# if prev_entry_time_obj.day != entry_time_obj.day:
-					# 	end_of_day_reached = True
-					# 	# prev_entry_time_obj = entry_time_obj
-					# 	break
+						# ## Detect change in day for computing daily flow results
+						# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						# if prev_entry_time_obj.day != entry_time_obj.day:
+						# 	end_of_day_reached = True
+						# 	# prev_entry_time_obj = entry_time_obj
+						# 	break
 						
-					prev_entry_time_obj = entry_time_obj
+						prev_entry_time_obj = entry_time_obj
 					
 
+						# if sm.need_newsheet_check(entry_time=entry_time):
+						# 	print("[watershed] END DATE REACHED:\t"+entry_time)
+						# 	end_date_reached = True
+
+					time.sleep(0.1)
+
+					## Too frequent?
 					# if sm.need_newsheet_check(entry_time=entry_time):
-					# 	print("[watershed] END DATE REACHED:\t"+entry_time)
+					# 	print("[watershed] END DATE REACHED (#2):\t"+entry_time)
 					# 	end_date_reached = True
 
-				time.sleep(0.1)
+				# sm.append_data(data)
+				sm.append_data(payload)
 
-				## Too frequent?
-				# if sm.need_newsheet_check(entry_time=entry_time):
-				# 	print("[watershed] END DATE REACHED (#2):\t"+entry_time)
-				# 	end_date_reached = True
+				if end_of_day_reached:
+					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
+					sm.get_results(prev_entry_time_obj)
+					prev_entry_time_obj = entry_time_obj
+					end_of_day_reached = False
 
-			# sm.append_data(data)
-			sm.append_data(payload)
+				if end_date_reached:
+					# final_day_of_month = sheet_manager.get_dt_for_last_day_of_month(sm.cursheet_end_date)
+					print("[watershed] main calling SheetManager.get_results() for date '{}' due to end_date_reached".format(sm.cursheet_end_date_str))
+					sm.get_results(sm.cursheet_end_date)
+					print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
+					sm.generate_newsheet()
+					prev_entry_time_obj = entry_time_obj
+					end_date_reached = False
 
-			if end_of_day_reached:
-				print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
-				sm.get_results(prev_entry_time_obj)
-				prev_entry_time_obj = entry_time_obj
-				end_of_day_reached = False
-
-			if end_date_reached:
-				# final_day_of_month = sheet_manager.get_dt_for_last_day_of_month(sm.cursheet_end_date)
-				print("[watershed] main calling SheetManager.get_results() for date '{}' due to end_date_reached".format(sm.cursheet_end_date_str))
-				sm.get_results(sm.cursheet_end_date)
-				print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
-				sm.generate_newsheet()
-				prev_entry_time_obj = entry_time_obj
-				end_date_reached = False
-
-		except KeyboardInterrupt:
-			break	
+			except KeyboardInterrupt:
+				break	
 
 
 

@@ -1,0 +1,3 @@
+gspread
+adafruit_circuitpython-ads1x15
+oauth2client
