@@ -176,6 +176,11 @@ update_local_repo() {
 
 ################################################################################################
 sleep 5s
+
+## Start the watchdog daemon
+# sudo chkconfig watchdog on
+# sudo /etc/init.d/watchdog start
+
 check_ansi
 
 check_network
@@ -216,6 +221,12 @@ while [ "$ANSI_INSTALLED" -ne "$SUCC" ]; do
 	sleep 2s
 done
 
+echo -e "\n====  WatershedPi launcher now calling setup.sh  ====\n"
+sleep 2s
+./setup.sh
+
+echo -e "\n====  WatershedPi now updating from GitHub  ====\n"
+sleep 2s
 update_local_repo
 
 if [ -f "watershed.py" ] && [ -f "sheet_manager.py" ]; then 

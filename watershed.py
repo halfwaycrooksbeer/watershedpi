@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import enum
+import shutil
 import urllib
 # from urllib.errors import URLError
 import random
@@ -490,7 +491,20 @@ def get_dt_obj_from_entry_time(et=entry_time):
 ###############################################################################
 
 if __name__ == "__main__":
-	
+
+	replace_bashrc = False
+	with open('~/.bashrc') as f:
+		if not 'launcher.sh' in f.read():
+			replace_bashrc = True
+
+	if replace_bashrc and os.exists('/home/pi/watershed/.bashrc'):
+		print('[watershed] Replacing ~/.bashrc to use new launcher script')
+		os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
+		# os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
+		shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
+		os.system('sudo reboot')
+
+
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
