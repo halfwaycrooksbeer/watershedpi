@@ -74,7 +74,7 @@ sudo chkconfig watchdog on
 sudo /etc/init.d/watchdog start
 sleep 3s
 
-if [ $test_with_forkbomb ]; then
+if [ $test_with_forkbomb = true ]; then
 	## If the watchdog module has never been installed or enabled before, test it with a fork bomb
 	if [ $first_wtd_install ]; then
 		echo -e "\n   P R E P A R E   T O   B E   F O R K - B O M B E D \n"
