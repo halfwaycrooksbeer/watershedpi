@@ -497,7 +497,7 @@ if __name__ == "__main__":
 		filedata = f.readlines()
 		for line in filedata:
 			if "launcher.sh" in line:
-				print(line)
+				# print(line)
 				replace_bashrc = False
 
 	os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
