@@ -493,11 +493,11 @@ def get_dt_obj_from_entry_time(et=entry_time):
 if __name__ == "__main__":
 
 	replace_bashrc = False
-	with open('~/.bashrc') as f:
+	with open('/home/pi/.bashrc') as f:
 		if not 'launcher.sh' in f.read():
 			replace_bashrc = True
 
-	if replace_bashrc and os.exists('/home/pi/watershed/.bashrc'):
+	if replace_bashrc and os.path.isfile('/home/pi/watershed/.bashrc'):
 		print('[watershed] Replacing ~/.bashrc to use new launcher script')
 		os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
 		# os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
