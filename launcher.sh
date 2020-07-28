@@ -223,7 +223,7 @@ done
 
 echo -e "\n====  WatershedPi launcher now calling setup.sh  ====\n"
 sleep 2s
-./setup.sh
+/home/pi/watershedpi/setup.sh
 
 echo -e "\n====  WatershedPi now updating from GitHub  ====\n"
 sleep 2s
