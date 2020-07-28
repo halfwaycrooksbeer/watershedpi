@@ -496,15 +496,17 @@ if __name__ == "__main__":
 	with open('/home/pi/.bashrc') as f:
 		filedata = f.readlines()
 		for line in filedata:
-			if "launcher" in line:
+			if "launcher.sh" in line:
 				print(line)
 				replace_bashrc = False
 
-	if replace_bashrc and os.path.isfile('/home/pi/watershed/.bashrc'):
+	os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
+
+	if replace_bashrc: # and os.path.isfile('/home/pi/watershed/.bashrc'):
 		print('[watershed] Replacing ~/.bashrc to use new launcher script')
-		os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
-		# os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
-		shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
+		# os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
+		## os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
+		# shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
 		os.system('sudo reboot')
 
 
