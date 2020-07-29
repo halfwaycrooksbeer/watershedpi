@@ -11,8 +11,8 @@ loop_delay = 1  ## Seconds
 
 
 MA4 = 0.98   ## Voltage corresponding to 4mA
-MA20 = 5.01  ## Voltage corresponding to 20mA
-MAX_LEVEL = 3.01
+MA20 = 4.91 #5.01  ## Voltage corresponding to 20mA
+MAX_LEVEL = 2.99 #3.3  #3.01
 MIN_LEVEL = 0.00
 
 def map(x, in_min, in_max, out_min, out_max):
