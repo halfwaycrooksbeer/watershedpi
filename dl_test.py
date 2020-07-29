@@ -34,6 +34,17 @@ def voltage_to_level(v):
 	# return float((m * v) + b)
 	return map(v, MA4, MA20, MIN_LEVEL, MAX_LEVEL)
 
+def v_to_mA_to_level(v):
+	## m&b[0]: used 4 to 12mA
+	## m&b[1]: used 12 to 20mA
+	## m&b[2]: used 4 to 20mA
+	## m&b[3]: average of the spread
+	m = [4.0816, 4.0609, 4.0712, ((4.0816 + 4.0609 + 4.0712) / 3.0)]
+	b = [0.000, -0.0609, -0.0102, ((0.0 + (-0.0609) + (-0.0102)) / 3.0)]
+	data_choice = 1 #3 #2 #0 #1
+	mA = float((m[data_choice] * v) + b[data_choice])
+	level = map(mA, 4, 20, 0, 2.99)
+	return level
 
 USE_LEVELSENSOR_CLASS = False
 
@@ -63,7 +74,8 @@ else:
 			volts = dl10.voltage
 			mA = voltage_to_mA(volts)
 			# level = mA_to_level(mA)
-			level = voltage_to_level(volts)
+			# level = voltage_to_level(volts)
+			level = v_to_mA_to_level(volts)
 			data = [get_ts(), level, volts, dl10.value]
 			print(fstr.format(*data))
 			time.sleep(loop_delay/2)
