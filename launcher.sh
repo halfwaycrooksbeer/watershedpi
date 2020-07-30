@@ -176,6 +176,7 @@ update_local_repo() {
 
 ################################################################################################
 sleep 5s
+clear
 
 ## Start the watchdog daemon
 # sudo chkconfig watchdog on
@@ -220,6 +221,11 @@ while [ "$ANSI_INSTALLED" -ne "$SUCC" ]; do
 	check_ansi
 	sleep 2s
 done
+
+if [ -f "$REPO_PATH${SEP}scripts/get_ip_addr.sh" ]; then
+	/home/pi/watershedpi/scripts/get_ip_addr.sh 
+	sleep 2s 
+fi
 
 echo -e "\n====  WatershedPi launcher now calling setup.sh  ====\n"
 sleep 2s

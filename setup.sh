@@ -74,6 +74,7 @@ else
 	# $PIP install --user gspread oauth2client google-api-python-client google-auth-httplib2 google-auth-oauthlib adafruit-blinka adafruit-circuitpython-ads1x15
 fi
 
+rm $PIP_LIST_FILE
 
 ## Configure watchdog settings
 echo -e "\n\n~~~~~~~ W4TCH_D0G ~~~~~~~~\n"
