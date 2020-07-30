@@ -24,7 +24,7 @@ fi
 declare -a ReqPackages=("git" "make" "build-essential" "i2c-tools" "libi2c-dev")
 for REQ_PKG in "${ReqPackages[@]}"; do
 	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
-	printf "$(ansi --yellow Checking for package") $(ansi --cyan $REQ_PKG):\t-->\t"
+	printf "$(ansi --yellow Checking for package) $(ansi --cyan $REQ_PKG):\t-->\t"
 	if [ "" = "$PKG_OK" ]; then
 		printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
 		sudo apt-get install -qq $REQ_PKG 
@@ -46,7 +46,7 @@ if [ -f "$PIP_REQS_FILE" ]; then
 	while IFS="" read -r p || [ -n "$p" ]
 	do
 		PKG_OK=$(grep "$p" $PIP_LIST_FILE)
-		printf "$(ansi --yellow Checking for package") $(ansi --cyan $p):\t-->\t"
+		printf "$(ansi --yellow Checking for package) $(ansi --cyan $p):\t-->\t"
 		if [ "" = "$PKG_OK" ]; then
 			printf "$(ansi --red --bold not yet installed) -- installing now...\n"
 			# ALL_INSTALLED=false
@@ -63,7 +63,7 @@ else
 	declare -a PipPackages=("gspread" "oauth2client" "google-api-python-client" "google-auth-httplib2" "google-auth-oauthlib" "adafruit-blinka" "adafruit-circuitpython-ads1x15")
 	for p in "${PipPackages[@]}"; do
 		PKG_OK=$(grep "$p" $PIP_LIST_FILE)
-		printf "$(ansi --yellow Checking for package") $(ansi --cyan $p):\t-->\t"
+		printf "$(ansi --yellow Checking for package) $(ansi --cyan $p):\t-->\t"
 		if [ "" = "$PKG_OK" ]; then
 			printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
 			$PIP install --user $p

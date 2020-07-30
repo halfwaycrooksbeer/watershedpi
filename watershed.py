@@ -227,7 +227,7 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		data_choice = 1 #3 #2 #0 #1
 		mA = float((m[data_choice] * sensVal) + b[data_choice])
 		self.currentData = mA
-		level = map(mA, 4, 20, 0, 2.99)
+		levelData = map(mA, 4, 20, 0, 2.99)
 
 		if ACCOUNT_FOR_SLUMP:
 			levelData -= FLUME_SLUMP
