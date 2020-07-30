@@ -225,7 +225,7 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		m = [4.0816, 4.0609, 4.0712, ((4.0816 + 4.0609 + 4.0712) / 3.0)]		## Slope
 		b = [0.000, -0.0609, -0.0102, ((0.0 + (-0.0609) + (-0.0102)) / 3.0)]	## y-Intercept
 		data_choice = 1 #3 #2 #0 #1
-		mA = float((m[data_choice] * v) + b[data_choice])
+		mA = float((m[data_choice] * sensVal) + b[data_choice])
 		self.currentData = mA
 		level = map(mA, 4, 20, 0, 2.99)
 
