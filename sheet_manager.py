@@ -12,12 +12,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 SIMULATE_END_DATE = False #True
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 
-CREDSFILE = "watershed_private.json"
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
-CURSHEETFILE = "cur_sheet.json"
-PUBLISHED_DATES_FILE = "published_dates.txt"
-SHEET_URL_FILE = "sheet_url.txt"
+
+CREDSFILE = os.path.join(os.environ['HOME'], "watershed_private.json")
+CURSHEETFILE = os.path.join(os.environ['HOME'], "cur_sheet.json")
+PUBLISHED_DATES_FILE = os.path.join(os.environ['HOME'], "published_dates.txt")
+SHEET_URL_FILE = os.path.join(os.environ['HOME'], "sheet_url.txt")
 
 SCOPE = [
 			'https://spreadsheets.google.com/feeds',

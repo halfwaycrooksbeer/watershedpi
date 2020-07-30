@@ -1,5 +1,6 @@
 #!/bin/bash
 
+## Check network
 netfails=0
 while [ $netfails -lt 5 ]; do
 	if ! ping -c 1 pypi.org; then
@@ -19,12 +20,58 @@ else
 	sudo reboot
 fi
 
-sudo apt-get install -y git make build-essential i2c-tools libi2c-dev
+## Check apt dependencies
+declare -a ReqPackages=("git" "make" "build-essential" "i2c-tools" "libi2c-dev")
+for REQ_PKG in "${ReqPackages[@]}"; do
+	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
+	printf "$(ansi --yellow Checking for package") $(ansi --cyan $REQ_PKG):\t-->\t"
+	if [ "" = "$PKG_OK" ]; then
+		printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
+		sudo apt-get install -qq $REQ_PKG 
+	else
+		printf "$(ansi --green --bold $PKG_OK)\n"
+	fi
+done
+echo -e "\n\n"
 
-if [ -f "requirements.txt" ]; then
-	python3 -m pip install --user -r requirements.txt
+## Check pip3 dependencies
+PIP="python3 -m pip"
+PIP_REQS_FILE="${HOME}/watershedpi/requirements.txt"
+PIP_LIST_FILE="${HOME}/pip_list.txt"
+
+$PIP list --format=columns > $PIP_LIST_FILE
+
+if [ -f "$PIP_REQS_FILE" ]; then
+	# ALL_INSTALLED=true
+	while IFS="" read -r p || [ -n "$p" ]
+	do
+		PKG_OK=$(grep "$p" $PIP_LIST_FILE)
+		printf "$(ansi --yellow Checking for package") $(ansi --cyan $p):\t-->\t"
+		if [ "" = "$PKG_OK" ]; then
+			printf "$(ansi --red --bold not yet installed) -- installing now...\n"
+			# ALL_INSTALLED=false
+			$PIP install --user $p 
+		else
+			printf "$(ansi --green --bold $PKG_OK)\n"
+		fi
+	done < $PIP_REQS_FILE
+
+	# if [ $ALL_INSTALLED = false ]; then
+	# 	$PIP install --user -r $PIP_REQS_FILE
+	# fi
 else
-	python3 -m pip install --user gspread oauth2client google-api-python-client google-auth-httplib2 google-auth-oauthlib adafruit-blinka adafruit-circuitpython-ads1x15
+	declare -a PipPackages=("gspread" "oauth2client" "google-api-python-client" "google-auth-httplib2" "google-auth-oauthlib" "adafruit-blinka" "adafruit-circuitpython-ads1x15")
+	for p in "${PipPackages[@]}"; do
+		PKG_OK=$(grep "$p" $PIP_LIST_FILE)
+		printf "$(ansi --yellow Checking for package") $(ansi --cyan $p):\t-->\t"
+		if [ "" = "$PKG_OK" ]; then
+			printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
+			$PIP install --user $p
+		else
+			printf "$(ansi --green --bold $PKG_OK)\n"
+		fi
+	done
+	# $PIP install --user gspread oauth2client google-api-python-client google-auth-httplib2 google-auth-oauthlib adafruit-blinka adafruit-circuitpython-ads1x15
 fi
 
 

@@ -24,9 +24,11 @@ import sheet_manager
 ## CONSTANTS
 ###############################################################################
 
+UPDATE_BASHRC = True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
-
 USE_GAS = False 
+
+ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
 DEBUG = True
 PRINTS_ON = True
@@ -151,13 +153,6 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		self._sampleCnt = 0
 		self._idx = 0
 
-		"""
-		if WARM_UP_LEVEL_SENSOR:
-			while self.level == 0.00:
-				if PRINTS_ON:
-					print('.', end='')
-				time.sleep(0.5)
-		"""
 		if WARM_UP_LEVEL_SENSOR:
 			for i in range(NSAMPLES*3):
 				self._level = self.readSensor()
@@ -173,17 +168,6 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		# self._level = self.levelRangeCheck(smoothedVal)
 
 		self._level = self.readSensor()
-		"""
-		if WARM_UP_LEVEL_SENSOR:
-			while not any(self.history):
-				self._level = self.readSensor()
-				if PRINTS_ON:
-					print('.', end='')
-				time.sleep(0.5)
-			if PRINTS_ON:
-				print('\n')
-		"""
-
 		return self._level
 
 	def readSensor(self):
@@ -282,8 +266,7 @@ class PHSensor(SensorBase): 	## PH500
 
 	PH_SLOPE = 3.46820809
 	PH_INTERCEPT = 3.3807514
-	#PH_OFFSET = 6.7997
-	PH_OFFSET = 6.8138  #  091
+	PH_OFFSET = 6.8138
 
 	def __init__(self, ads=None):
 		# super().__init__(analog_in.AnalogIn(adc, pin))
@@ -366,7 +349,6 @@ def setup():
 def network_connected():
 	try:
 		urllib.request.urlopen("http://www.google.com").close()
-	# except urllib.errors.URLError:
 	except Exception as e:
 		if PRINTS_ON:
 			print("[network_connected] Exception: "+e)
@@ -409,27 +391,6 @@ def getDate():
 	return date_str
 
 def getTimestamp(dt_obj=None):
-	"""
-	if dt_obj is None:
-		dt_obj = dt.datetime.now()
-	dt_str = dt_obj.strftime("%m/%d/%Y,%I:%M:%S %p")
-	if TESTING:
-		m = int(dt_str.split('/')[0])
-		if m == 12:
-			m = 1
-		else:
-			m += 1
-		m_str = str(m)
-		# if m < 10:
-		# 	m_str = '0' + m_str
-	else:
-		m_str = dt_str.split('/')[0]
-		if m_str[0] == '0':
-			m_str = m_str[1:]
-		### NOTE: ^ Does this need to be done for days as well? (removing zero-pads)
-	dt_str = '/'.join([m_str, *(dt_str.split('/')[1:])])
-	return dt_str
-	"""
 	return sheet_manager.get_timestamp(dt_obj)
 
 def encode_payload():
@@ -449,11 +410,6 @@ def send_payload():
 		print("[send_payload] FULL SHEET ERROR: Workbook at capacity (5,000,000 cells)!!")
 
 	last_update = time.time()
-
-# def authorize_gc():
-# 	global gc
-# 	credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDSFILE, SCOPE)
-# 	gc = gspread.authorize(credentials)
 
 def get_tomorrow(today=None):
 	if today is None:
@@ -480,34 +436,28 @@ def get_dt_obj_from_entry_time(et=entry_time):
 	return dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
 
 
-# def need_newsheet_check():
-# 	today = sheet_manager.get_date_today()
-# 	tomorrow = get_tomorrow(today=today)
-# 	if 
-
-
 ###############################################################################
 ## LAUNCHER
 ###############################################################################
 
 if __name__ == "__main__":
+	if UPDATE_BASHRC:
+		replace_bashrc = True
+		with open('/home/pi/.bashrc') as f:
+			filedata = f.readlines()
+			for line in filedata:
+				if "launcher.sh" in line:
+					# print(line)
+					replace_bashrc = False
 
-	replace_bashrc = True
-	with open('/home/pi/.bashrc') as f:
-		filedata = f.readlines()
-		for line in filedata:
-			if "launcher.sh" in line:
-				# print(line)
-				replace_bashrc = False
+		os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
 
-	os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
-
-	if replace_bashrc: # and os.path.isfile('/home/pi/watershed/.bashrc'):
-		print('[watershed] Replacing ~/.bashrc to use new launcher script')
-		# os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
-		## os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
-		# shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
-		os.system('sudo reboot')
+		if replace_bashrc: # and os.path.isfile('/home/pi/watershed/.bashrc'):
+			print('[watershed] Replacing ~/.bashrc to use new launcher script')
+			# os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
+			## os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
+			# shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
+			os.system('sudo reboot')
 
 
 	tries = 0
@@ -522,10 +472,7 @@ if __name__ == "__main__":
 	print('Connected.')
 
 	setup()
-	
-	# test_str = "[{}]\tLevel: {:3.2f} in\n\tpH   : {:3.2f}\n"
 
-	# global last_update
 	last_update = time.time() 	## Time in seconds since the epoch, as a floating point number
 
 	if USE_GAS:
@@ -564,33 +511,22 @@ if __name__ == "__main__":
 				break
 	else:
 		sm = sheet_manager.SheetManager()
-		# sm2 = sheet_manager.SheetManager()
-		# if not sm is sm2:
-		# 	print("SheetManager is not a true Singleton :(")
-		# else:
-		# 	print("SheetManager is a true Singleton :)")
-		# del(sm2)
-
-		# seconds_delta = dt.timedelta(seconds=INTERVAL)
-		# final_month = sm.cursheet_end_date.month 
 		entry_time = getTimestamp()
 		entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
 		prev_entry_time_obj = entry_time_obj
-
-
 		initial_results_date_check_made = False 
+
 		try:
 			last_date_published = sm.get_last_date_processed()
 		except:
 			last_date_published = None
+
 		last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
-		# if last_date_published is not None:
-		# 	print("\n sm.get_last_date_processed():  '{}'\n sheet_manager.get_last_published_date():  '{}'\n".format(last_date_published, last_published_date))
+	
 		if last_published_date is None:
 			if last_date_published is not None and last_date_published != "Date":
 				sheet_manager.log_published_date(last_date_published)
 			else:
-				# sheet_manager.log_published_date(dt.datetime(2020, 4, 1).strftime(sheet_manager.FULL_DATE_FORMAT))
 				sheet_manager.log_published_date((sheet_manager.get_datetime_now() - dt.timedelta(days=1)).strftime(sheet_manager.FULL_DATE_FORMAT))
 			last_published_date = sheet_manager.get_last_published_date() #.replace("\n","")
 		if last_date_published is not None and last_published_date != last_date_published:
@@ -601,7 +537,6 @@ if __name__ == "__main__":
 
 		while True:
 			try:
-				# data = dict()
 				payload = list()
 				updates = 0
 				end_date_reached = False
@@ -614,8 +549,7 @@ if __name__ == "__main__":
 						entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
-							# prev_entry_time_obj = entry_time_obj
-							# break
+
 
 						## For when program has missed several days since last running
 						if not initial_results_date_check_made and '/' in last_published_date:
@@ -624,15 +558,10 @@ if __name__ == "__main__":
 								y = "20" + y
 							last_dt_obj = dt.datetime(int(y), int(m), int(d))
 						
-							# if last_dt_obj < entry_time_obj:
-							# entry_date = entry_time_obj.date
 							entry_date = sheet_manager.get_date_today()
 							this_dt = dt.datetime(entry_date.year, entry_date.month, entry_date.day)
-							# check_cnt = 1
-							# one_day = dt.timedelta(days=1)
-							# print("this_dt:  {}".format(this_dt))
-							while last_dt_obj < this_dt:  # and last_dt_obj < (this_dt - one_day):  # entry_time_obj:
-								# print("last_dt_obj:  {}".format(last_dt_obj))
+							
+							while last_dt_obj < this_dt: 
 								try:
 									sm.get_results(last_dt_obj)
 								except:
@@ -641,8 +570,6 @@ if __name__ == "__main__":
 									break
 								last_dt_obj = get_tomorrow(today=last_dt_obj)
 								time.sleep(1)
-								# time.sleep(check_cnt)
-								# check_cnt += 1
 							print("\n")
 							initial_results_date_check_made = True
 
@@ -654,13 +581,11 @@ if __name__ == "__main__":
 							print("\ttoday   :\t{}".format(dt_now))
 							print("\tend date:\t{}".format(sm.cursheet_end_date))
 							end_date_reached = True
-							# break
 
 						## Redundant?
 						if sm.need_newsheet_check(entry_time=entry_time):
 							print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
 							end_date_reached = True
-							# break
 
 						if end_of_day_reached or end_date_reached:
 							break
@@ -668,36 +593,16 @@ if __name__ == "__main__":
 						level = round(l_sensor.level, 3)
 						pH = round(p_sensor.pH, 2)
 
-						# payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
-						# data.update({ entry_time : { "l" : level, "p" : pH	} })
 						payload.append({ entry_time : { "l" : level, "p" : pH	} })
 						updates += 1	
 
 						displayValuesToSerial(pH, level)
 						last_update = time.time()
-
-						# ## Detect change in day for computing daily flow results
-						# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
-						# if prev_entry_time_obj.day != entry_time_obj.day:
-						# 	end_of_day_reached = True
-						# 	# prev_entry_time_obj = entry_time_obj
-						# 	break
 						
 						prev_entry_time_obj = entry_time_obj
-					
-
-						# if sm.need_newsheet_check(entry_time=entry_time):
-						# 	print("[watershed] END DATE REACHED:\t"+entry_time)
-						# 	end_date_reached = True
 
 					time.sleep(0.1)
 
-					## Too frequent?
-					# if sm.need_newsheet_check(entry_time=entry_time):
-					# 	print("[watershed] END DATE REACHED (#2):\t"+entry_time)
-					# 	end_date_reached = True
-
-				# sm.append_data(data)
 				sm.append_data(payload)
 
 				if end_of_day_reached:
@@ -717,6 +622,12 @@ if __name__ == "__main__":
 
 			except KeyboardInterrupt:
 				break	
+
+			finally:
+				with open(ERROR_LOGFILE, 'a') as f:
+					f.write('\n[ {} ]\t--> watershed.py exited the program loop\n'.format(getTimestamp()))
+
+
 
 
 
