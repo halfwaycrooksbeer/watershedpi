@@ -5,7 +5,6 @@ import time
 import enum
 import shutil
 import urllib
-# from urllib.errors import URLError
 import random
 import requests
 import busio
@@ -15,8 +14,6 @@ import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
 import json
-# import gspread
-# from oauth2client.service_account import ServiceAccountCredentials
 import sheet_manager
 
 
@@ -33,7 +30,7 @@ ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 DEBUG = True
 PRINTS_ON = True
 CROOKS_MODE = False #True
-ACCOUNT_FOR_SLUMP = True
+ACCOUNT_FOR_SLUMP = False #True
 WARM_UP_LEVEL_SENSOR = True
 
 GID = "AKfycbwcei1kWqE1zLnNm2lciSfsJhxnNFaKASewn29hSIBjGAKZ3m-f"
@@ -62,9 +59,9 @@ WARNING = 6
 INTERVAL = 15 	## seconds
 JSON_CAPACITY = 20
 NSAMPLES = 8
-SPIKE_THRESH = 0.14
-SENSOR_H = 9.25
-FILL_H = 3.00
+SPIKE_THRESH = 0.14		## perhaps try 0.25 && 0.5 as well...
+SENSOR_H = 9.1  #9.25
+FILL_H = 2.9  #3.00
 RISER_H = 0.00
 FLUME_SLUMP = 1.2
 
@@ -133,10 +130,13 @@ class SensorBase():
 
 class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitter
 	L_PIN = A0
-	MA4  = ( 178, 375 )  #392 }; // Raw analog input value range that corresponds to ~4 mA (EMPTY)
-	MA12 = ( 640, 652 ) 	#    // Raw analog input value range that corresponds to ~12 mA (MIDTANK)
-	MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
-	MA22 = 1023	        	#    // Raw analog input value equivalent to 22 mA (OVERFILL)
+	# MA4  = ( 178, 375 )  #392 }; // Raw analog input value range that corresponds to ~4 mA (EMPTY)
+	# MA12 = ( 640, 652 ) 	#    // Raw analog input value range that corresponds to ~12 mA (MIDTANK)
+	# MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
+	# MA22 = 1023	        	#    // Raw analog input value equivalent to 22 mA (OVERFILL)
+	MA4 = 0.98	## 4mA ~~ 0.98v ~~ 0 in.
+	MA12 = 2.94	## 12mA ~~ 2.94v ~~ 1.5 in. 
+	MA20 = 4.91	## 20mA ~~ 4.91v ~~ 3 in.
 
 	def __init__(self, ads=None):
 		# super().__init__(analog_in.AnalogIn(adc, pin))
@@ -164,13 +164,89 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 
 	@property
 	def level(self):
-		# smoothedVal = self.readSensor()
-		# self._level = self.levelRangeCheck(smoothedVal)
-
 		self._level = self.readSensor()
 		return self._level
 
 	def readSensor(self):
+		global flume_state
+		v = self.voltage
+		if v > 5:
+			flume_state = WARNING
+			parseflume_state()
+			if DEBUG:
+				print("!~~! OVERVOLTAGE WARNING !~~!\n")
+
+		self.history[self._idx] = v
+		lastVal = self.history[NSAMPLES-1] if self._idx == 0 else self.history[self._idx-1]
+
+		delta = v - lastVal
+		if abs(delta) > SPIKE_THRESH:
+			self.history[self._idx] = (self.history[self._idx] + lastVal) / 2.0
+
+		self._idx += 1
+		self._idx %= NSAMPLES
+
+		if self._sampleCnt != NSAMPLES:
+			self._sampleCnt += 1
+
+		avg = statistics.mean(self.history)
+		sensorValue = abs(avg)
+		return self.levelRangeCheck(sensorValue)
+
+	def levelRangeCheck(self, sensVal):
+		global flume_state
+		mA4 = LevelSensor.MA4
+		mA12 = LevelSensor.MA12
+		mA20 = LevelSensor.MA20
+		# mA22 = LevelSensor.MA22
+
+		if self.sameHistoryCheck():
+			flume_state = ERR 
+		elif sensVal < (mA4-SPIKE_THRESH):
+			flume_state = ZERO
+		elif sensVal > (mA20+0.25):
+			flume_state = OVERFILL
+		elif (mA20-SPIKE_THRESH) <= sensVal <= (mA20+SPIKE_THRESH):
+			flume_state = FULL
+		elif (mA4-SPIKE_THRESH) <= sensVal <= (mA4+SPIKE_THRESH):
+			flume_state = EMPTY
+		elif (mA4+SPIKE_THRESH) < sensVal < (mA20-SPIKE_THRESH):
+			flume_state = OK
+		else:
+			flume_state = 255
+
+		parseflume_state()
+
+		#### New method:
+		## m&b[0]: used 4 to 12mA
+		## m&b[1]: used 12 to 20mA
+		## m&b[2]: used 4 to 20mA
+		## m&b[3]: average of the spread
+		m = [4.0816, 4.0609, 4.0712, ((4.0816 + 4.0609 + 4.0712) / 3.0)]		## Slope
+		b = [0.000, -0.0609, -0.0102, ((0.0 + (-0.0609) + (-0.0102)) / 3.0)]	## y-Intercept
+		data_choice = 1 #3 #2 #0 #1
+		mA = float((m[data_choice] * v) + b[data_choice])
+		self.currentData = mA
+		level = map(mA, 4, 20, 0, 2.99)
+
+		if ACCOUNT_FOR_SLUMP:
+			levelData -= FLUME_SLUMP
+		if levelData < 0.0:
+			levelData = 0.0
+		####
+		
+		return float(levelData)
+
+	def sameHistoryCheck(self):
+		base = self.history[0]
+		same = True
+		for h in self.history:
+			same = same and (base == h)
+			if not same:
+				break
+		return same 
+
+	def old_readSensor(self):
 		global flume_state
 		v = self.voltage
 		if v > 5:
@@ -202,27 +278,14 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		sensorValue = abs(avg)
 		# return sensorValue
 		return self.levelRangeCheck(sensorValue)
-	
 
-	def sameHistoryCheck(self):
-		# if self._sampleCnt < NSAMPLES:
-		# 	return False
-		base = self.history[0]
-		same = True
-		# for i in range(1, NSAMPLES):
-		# 	same = same and (base == self.history[i])
-		for h in self.history:
-			same = same and (base == h)
-			if not same:
-				break
-		return same 
-
-	def levelRangeCheck(self, sensVal):
+	def old_levelRangeCheck(self, sensVal):
 		global flume_state
-		mA4 = LevelSensor.MA4
-		mA12 = LevelSensor.MA12
-		mA20 = LevelSensor.MA20
-		mA22 = LevelSensor.MA22
+		mA4 = ( 178, 375 ) #LevelSensor.MA4
+		mA12 = ( 640, 652 ) #LevelSensor.MA12
+		mA20 = ( 1010, 1022 ) #LevelSensor.MA20
+		mA22 = 1023 #LevelSensor.MA22
+
 
 		if self.sameHistoryCheck():
 			flume_state = ERR 
@@ -288,7 +351,12 @@ class PHSensor(SensorBase): 	## PH500
 		m = self.PH_SLOPE
 		b = self.PH_INTERCEPT
 		y = (m * x) + b
-		return float(y - self.PH_OFFSET)
+		self._pH = float(y - self.PH_OFFSET)
+		if self._pH < 0.0:
+			self._pH = 0.0
+		elif self._pH > 14.0:
+			self._pH = 14.0
+		return self._pH
 
 	@property
 	def old_pH(self):
