@@ -2,10 +2,7 @@
 import os
 import sys
 import time
-import enum
-import shutil
 import urllib
-import random
 import requests
 import busio
 import board
@@ -13,7 +10,6 @@ import statistics
 import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
-import json
 import sheet_manager
 
 
@@ -65,8 +61,6 @@ FILL_H = 2.9  #3.00
 RISER_H = 0.00
 FLUME_SLUMP = 1.2
 
-
-
 ## Macros
 def IN2CM(inches):
 	return inches * 2.54
@@ -109,7 +103,6 @@ wksh = None
 ## SENSOR CLASSES
 ###############################################################################
 
-
 class SensorBase():
 	def __init__(self, ain):
 		self._ain = ain 
@@ -130,16 +123,11 @@ class SensorBase():
 
 class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitter
 	L_PIN = A0
-	# MA4  = ( 178, 375 )  #392 }; // Raw analog input value range that corresponds to ~4 mA (EMPTY)
-	# MA12 = ( 640, 652 ) 	#    // Raw analog input value range that corresponds to ~12 mA (MIDTANK)
-	# MA20 = ( 1010, 1022 ) 	#    // Raw analog input value range that corresponds to ~19-20 mA (FULL)
-	# MA22 = 1023	        	#    // Raw analog input value equivalent to 22 mA (OVERFILL)
-	MA4 = 0.98	## 4mA ~~ 0.98v ~~ 0 in.
-	MA12 = 2.94	## 12mA ~~ 2.94v ~~ 1.5 in. 
-	MA20 = 4.91	## 20mA ~~ 4.91v ~~ 3 in.
+	MA4 = 0.98	## 4mA ~~ 0.98v ~~ 0 in.    (EMPTY)
+	MA12 = 2.94	## 12mA ~~ 2.94v ~~ 1.5 in. (MIDTANK)
+	MA20 = 4.91	## 20mA ~~ 4.91v ~~ 3 in.   (FULL)
 
 	def __init__(self, ads=None):
-		# super().__init__(analog_in.AnalogIn(adc, pin))
 		if ads is None:
 			if not adc is None:
 				ads = adc
@@ -229,6 +217,15 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 		self.currentData = mA
 		levelData = map(mA, 4, 20, 0, 2.99)
 
+		"""
+		mapOutMin = FULL_LEVEL_MM * 1000
+		mapOutMax = EMPTY_LEVEL_MM * 1000
+		mappedUM = map(sensVal, mA4[0], mA22, mapOutMax, mapOutMin)
+		
+		# levelData = (SENSOR_H - RISER_H) - CM2IN((float(mappedUM) / 10000.00))
+		levelData = (SENSOR_H + RISER_H) - CM2IN((float(mappedUM) / 10000.00))
+		"""
+
 		if ACCOUNT_FOR_SLUMP:
 			levelData -= FLUME_SLUMP
 		if levelData < 0.0:
@@ -246,81 +243,6 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 				break
 		return same 
 
-	def old_readSensor(self):
-		global flume_state
-		v = self.voltage
-		if v > 5:
-			flume_state = WARNING
-			parseflume_state()
-			if DEBUG:
-				print("!~~! OVERVOLTAGE WARNING !~~!\n")
-
-		# l_raw = V2RAW(v)
-		l_raw = self.araw
-		# if any(self.history):
-		self.history[self._idx] = l_raw
-		# else:
-		# 	for i in range(NSAMPLES):
-		# 		self.history[i] = l_raw
-
-		lastVal = self.history[NSAMPLES-1] if self._idx == 0 else self.history[self._idx-1]
-		delta = l_raw - lastVal
-		if abs(delta) > SPIKE_THRESH:
-			self.history[self._idx] = (self.history[self._idx] + lastVal) / 2.0
-
-		self._idx += 1
-		self._idx %= NSAMPLES
-
-		if self._sampleCnt != NSAMPLES:
-			self._sampleCnt += 1
-
-		avg = statistics.mean(self.history)
-		sensorValue = abs(avg)
-		# return sensorValue
-		return self.levelRangeCheck(sensorValue)
-
-	def old_levelRangeCheck(self, sensVal):
-		global flume_state
-		mA4 = ( 178, 375 ) #LevelSensor.MA4
-		mA12 = ( 640, 652 ) #LevelSensor.MA12
-		mA20 = ( 1010, 1022 ) #LevelSensor.MA20
-		mA22 = 1023 #LevelSensor.MA22
-
-
-		if self.sameHistoryCheck():
-			flume_state = ERR 
-		elif sensVal < mA4[0]:
-			flume_state = ZERO
-		elif sensVal >= mA22:
-			flume_state = OVERFILL
-		elif sensVal >= mA20[0] and sensVal <= mA20[1]:
-			flume_state = FULL
-		elif sensVal >= mA4[0] and sensVal <= mA4[1]:
-			flume_state = EMPTY
-		elif sensVal > mA4[1] and sensVal < mA20[0]:
-			flume_state = OK
-		else:
-			flume_state = 255
-
-		parseflume_state()
-
-		mapOutMin = FULL_LEVEL_MM * 1000
-		mapOutMax = EMPTY_LEVEL_MM * 1000
-		mappedUM = map(sensVal, mA4[0], mA22, mapOutMax, mapOutMin)
-		
-		# levelData = (SENSOR_H - RISER_H) - CM2IN((float(mappedUM) / 10000.00))
-		levelData = (SENSOR_H + RISER_H) - CM2IN((float(mappedUM) / 10000.00))
-		if ACCOUNT_FOR_SLUMP:
-			levelData -= FLUME_SLUMP
-		if levelData < 0.0:
-			levelData = 0.0
-
-		## Map from 4mA to 20mA
-		self.currentData = float(map(sensVal, mA4[0], mA22, 4000, 20000)) / 1000.00
-
-		# return float(sensVal)
-		return float(levelData)
-
 
 class PHSensor(SensorBase): 	## PH500
 	P_PIN = A1
@@ -332,13 +254,10 @@ class PHSensor(SensorBase): 	## PH500
 	PH_OFFSET = 6.8138
 
 	def __init__(self, ads=None):
-		# super().__init__(analog_in.AnalogIn(adc, pin))
 		if ads is None:
 			if not adc is None:
 				ads = adc
 			else:
-				#if i2c is None:
-				#	i2c = busio.I2C(board.SCL, board.SDA)
 				if ADS_TYPE == 1015:
 					ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
 				else:
@@ -347,7 +266,7 @@ class PHSensor(SensorBase): 	## PH500
 
 	@property
 	def pH(self):
-		x = self.voltage  #._value
+		x = self.voltage
 		m = self.PH_SLOPE
 		b = self.PH_INTERCEPT
 		y = (m * x) + b
@@ -358,37 +277,6 @@ class PHSensor(SensorBase): 	## PH500
 			self._pH = 14.0
 		return self._pH
 
-	@property
-	def old_pH(self):
-		pH_mv_max = PHSensor.V_MAX * 1000
-		pH_mv_min = PHSensor.V_MIN * 1000
-		mv = self.voltage * 1000
-		mapPh = map(mv, 0, pH_mv_max, 0, 14000)
-		self._pH = float(mapPh) / 1000.0
-
-		offset = 0.51
-		self._pH -= offset
-
-		if self._pH < 6.5 or self._pH > 7.5:
-			degree = (self._pH - 7.0) / 10.0
-			pH_gain = 10 if CROOKS_MODE else 30
-			if degree < 0.0:
-				self._pH -= (degree**2) * pH_gain
-			else:
-				self._pH += (degree**2) * pH_gain
-
-		if not CROOKS_MODE:
-			if self._pH < 0:
-				self._pH = 0.0
-			elif self._pH > 14.0:
-				self._pH = 14.0
-		else:
-			if self._pH < 6.0:
-				self._pH = (float(random.randrange(61, 65, 1)) / 10.0) + ((int(self._pH * 100.0) % 10) * 0.01)
-			elif self._pH > 12.0:
-				self._pH = 11.8
-
-		return self._pH 
 
 ###############################################################################
 ## PROGRAM FUNCTIONS
@@ -488,12 +376,9 @@ def get_tomorrow(today=None):
 
 def get_dt_obj_from_entry_time(et=entry_time):
 	if et is None:
-		# return sheet_manager.get_date_today()
 		return sheet_manager.get_datetime_now()
 	entry_time_date, entry_time_time = entry_time.split(',')
-	# print("[get_dt_obj_from_entry_time] entry_time_date = "+entry_time_date)
 	m, d, y = entry_time_date.split('/')
-	# return dt.date(int(y), int(m), int(d))
 	hr, mn, scampm = entry_time_time.split(':')
 	hr = int(hr)-1
 	mn = int(mn)
@@ -515,16 +400,11 @@ if __name__ == "__main__":
 			filedata = f.readlines()
 			for line in filedata:
 				if "launcher.sh" in line:
-					# print(line)
 					replace_bashrc = False
 
 		os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
-
-		if replace_bashrc: # and os.path.isfile('/home/pi/watershed/.bashrc'):
+		if replace_bashrc:
 			print('[watershed] Replacing ~/.bashrc to use new launcher script')
-			# os.rename('/home/pi/.bashrc', '/home/pi/.old_bashrc')
-			## os.replace('/home/pi/.bashrc', '/home/pi/watershed/.bashrc')
-			# shutil.move('/home/pi/watershed/.bashrc', '/home/pi/')
 			os.system('sudo reboot')
 
 
@@ -545,7 +425,6 @@ if __name__ == "__main__":
 
 	if USE_GAS:
 		while True:
-			# global entry_time, updates, payload
 			try:
 				payload = 'json={'
 				updates = 0
@@ -554,9 +433,6 @@ if __name__ == "__main__":
 						entry_time = getTimestamp()
 						level = l_sensor.level
 						pH = p_sensor.pH
-
-						# if PRINTS_ON:
-						# 	print(test_str.format(entry_time, level, pH))
 						payload += '\"{0}\":\"{1:3.2f},{2:3.2f}\"'.format(entry_time, level, pH)
 					
 						updates += 1
@@ -602,7 +478,6 @@ if __name__ == "__main__":
 		else:
 			print("\t|  LAST RESULTS FOUND FOR {}  |\n".format(last_published_date))
 
-
 		while True:
 			try:
 				payload = list()
@@ -617,7 +492,6 @@ if __name__ == "__main__":
 						entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
-
 
 						## For when program has missed several days since last running
 						if not initial_results_date_check_made and '/' in last_published_date:
@@ -641,7 +515,6 @@ if __name__ == "__main__":
 							print("\n")
 							initial_results_date_check_made = True
 
-
 						## Sufficient?
 						dt_now = sheet_manager.get_datetime_now()
 						if dt_now > sm.cursheet_end_date:
@@ -660,13 +533,11 @@ if __name__ == "__main__":
 
 						level = round(l_sensor.level, 3)
 						pH = round(p_sensor.pH, 2)
-
 						payload.append({ entry_time : { "l" : level, "p" : pH	} })
 						updates += 1	
 
 						displayValuesToSerial(pH, level)
 						last_update = time.time()
-						
 						prev_entry_time_obj = entry_time_obj
 
 					time.sleep(0.1)
@@ -694,10 +565,4 @@ if __name__ == "__main__":
 			finally:
 				with open(ERROR_LOGFILE, 'a') as f:
 					f.write('\n[ {} ]\t--> watershed.py exited the program loop\n'.format(getTimestamp()))
-
-
-
-
-
-
 
