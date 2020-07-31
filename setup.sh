@@ -29,7 +29,7 @@ for REQ_PKG in "${ReqPackages[@]}"; do
 		printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
 		sudo apt-get install -qq $REQ_PKG 
 	else
-		printf "$(ansi --green --bold $PKG_OK)\n"
+		printf "$(ansi --green --bold install ok installed) \n"   #$PKG_OK)\n"
 	fi
 done
 echo -e "\n\n"
@@ -45,6 +45,9 @@ if [ -f "$PIP_REQS_FILE" ]; then
 	# ALL_INSTALLED=true
 	while IFS="" read -r p || [ -n "$p" ]
 	do
+		if [ ! -f "$PIP_LIST_FILE" ]; then
+			python3 -m pip list --format=columns > "$PIP_LIST_FILE"
+		fi
 		PKG_OK=$(grep "$p" $PIP_LIST_FILE)
 		printf "$(ansi --yellow Checking for package) $(ansi --cyan $p):\t-->\t"
 		if [ "" = "$PKG_OK" ]; then
