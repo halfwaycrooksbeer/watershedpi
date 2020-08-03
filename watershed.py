@@ -574,7 +574,13 @@ if __name__ == "__main__":
 			except (KeyboardInterrupt, SystemExit, Exception) as exc:
 				# exc_string = traceback.format_exc()
 				# exc_string = '{}\n'.format(exc.__class__.__name__)
-				exc_string = '{}  (line #: {})\n'.format(exc.__class__.__name__, sys.exc_info()[2].tb_lineno)
+				# exc_string = '{}  (line #: {})\n'.format(exc.__class__.__name__, sys.exc_info()[2].tb_lineno)
+
+				exc_name = exc.__class__.__name__
+				exc_desc = str(exc)
+				exc_lineno = sys.exc_info()[2].tb_lineno
+				exc_string = '{}:  "{}"  (line {})'.format(exc_name, exc_desc, exc_lineno)
+				
 				break
 
 	with open(ERROR_LOGFILE, 'a') as f:
