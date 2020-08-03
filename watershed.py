@@ -19,6 +19,7 @@ import sheet_manager
 ## CONSTANTS
 ###############################################################################
 
+DRY_RUN = False  #True  ## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
 UPDATE_BASHRC = False  #True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
 USE_GAS = False 
@@ -474,7 +475,8 @@ if __name__ == "__main__":
 				if PRINTS_ON:
 					print("Sending payload: " + payload)
 
-				send_payload()
+				if not DRY_RUN:
+					send_payload()
 
 			except KeyboardInterrupt:
 				break
@@ -574,7 +576,8 @@ if __name__ == "__main__":
 
 					time.sleep(0.1)
 
-				sm.append_data(payload)
+				if not DRY_RUN:
+					sm.append_data(payload)
 
 				if end_of_day_reached:
 					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
@@ -603,7 +606,9 @@ if __name__ == "__main__":
 
 				if exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string):
 					needs_reboot = True
-
+				elif exc_name == "KeyboardInterrupt":
+					os.system("sudo pkill check_ps.sh")
+					
 				break
 
 	with open(ERROR_LOGFILE, 'a') as f:

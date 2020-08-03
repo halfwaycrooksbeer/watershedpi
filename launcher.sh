@@ -172,6 +172,16 @@ update_local_repo() {
 	echo "[ $(ansi --green --bold watershed.py updated!) ]"
 	ln -f "$REPO_PATH${SEP}sheet_manager.py" .
 	echo "[ $(ansi --green --bold sheet_manager.py updated!) ]"
+
+	if [ -f "$HOME${SEP}scripts/check_ps.sh" ]; then
+		ln -f "$HOME${SEP}scripts/check_ps.sh" .
+		echo "[ $(ansi --green --bold check_ps.sh updated!) ]"
+	else
+		if [ ! -f "check_ps.sh" ]; then
+			printf "\n[ $(ansi --red --bold ERROR: No 'check_ps.sh' file found!) ]\n"
+			die
+		fi
+	fi
 }
 
 ################################################################################################
@@ -229,13 +239,26 @@ fi
 
 echo -e "\n====  WatershedPi launcher now calling setup.sh  ====\n"
 sleep 2s
-/home/pi/watershedpi/setup.sh
+if [ -f "$REPO_PATH${SEP}setup.sh" ]; then
+	/home/pi/watershedpi/setup.sh
+else
+	if [ -f "setup.sh" ]; then
+		./setup.sh 
+	else 
+		printf "\n[ $(ansi --red --bold ERROR: No 'setup.sh' file found!) ]\n"
+		die
+	fi
+fi
 
 echo -e "\n====  WatershedPi now updating from GitHub  ====\n"
 sleep 2s
 update_local_repo
 
 if [ -f "watershed.py" ] && [ -f "sheet_manager.py" ]; then 
+	
+	./check_ps.sh &
+	## ^ To kill:    sudo pkill check_ps.sh
+
 	python3 watershed.py
 else
 	die
