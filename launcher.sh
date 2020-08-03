@@ -173,8 +173,8 @@ update_local_repo() {
 	ln -f "$REPO_PATH${SEP}sheet_manager.py" .
 	echo "[ $(ansi --green --bold sheet_manager.py updated!) ]"
 
-	if [ -f "$HOME${SEP}scripts/check_ps.sh" ]; then
-		ln -f "$HOME${SEP}scripts/check_ps.sh" .
+	if [ -f "$REPO_PATH${SEP}scripts/check_ps.sh" ]; then
+		ln -f "$REPO_PATH${SEP}scripts/check_ps.sh" .
 		echo "[ $(ansi --green --bold check_ps.sh updated!) ]"
 	else
 		if [ ! -f "check_ps.sh" ]; then
