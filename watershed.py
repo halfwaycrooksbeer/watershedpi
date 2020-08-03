@@ -315,7 +315,7 @@ def network_connected():
 		urllib.request.urlopen("http://www.google.com").close()
 	except Exception as e:
 		if PRINTS_ON:
-			print("[network_connected] Exception: "+e)
+			print("[network_connected] Exception: " + str(e))
 		return False
 	else:
 		return True
