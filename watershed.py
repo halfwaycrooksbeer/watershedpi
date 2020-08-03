@@ -396,6 +396,26 @@ def get_dt_obj_from_entry_time(et=entry_time):
 		hr += 12
 	return dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
 
+### UPDATE [ 8/3/2020 ]
+def check_connection():
+	tries = 0
+	while not network_connected():
+		print('Not connected ...')
+		tries += 1
+		if (tries > 4):
+			print("[ERROR] Could not connect to network!")
+
+			with open(ERROR_LOGFILE, 'a') as f:
+				f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], "Could not connect to network at program start!\n"))
+
+			print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
+			time.sleep(1)
+			os.system("sudo reboot")
+
+			sys.exit(1)
+			
+		time.sleep(3)
+###
 
 ###############################################################################
 ## LAUNCHER
@@ -415,15 +435,29 @@ if __name__ == "__main__":
 			print('[watershed] Replacing ~/.bashrc to use new launcher script')
 			os.system('sudo reboot')
 
-
+	"""
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
 		tries += 1
 		if (tries > 4):
 			print("[ERROR] Could not connect to network!")
+
+			with open(ERROR_LOGFILE, 'a') as f:
+				f.write('\n[ ? ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(sys.argv[0], "Could not connect to network at program start!\n"))
+
+			print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
+			time.sleep(1)
+			os.system("sudo reboot")
+
 			sys.exit(1)
+
 		time.sleep(3)
+	"""
+
+	### UPDATE [ 8/3/2020 ]
+	check_connection()
+	###
 
 	print('Connected.')
 
@@ -431,6 +465,7 @@ if __name__ == "__main__":
 
 	last_update = time.time() 	## Time in seconds since the epoch, as a floating point number
 	exc_string = ""  ## Exception string, for logging
+	needs_reboot = False
 
 	if USE_GAS:
 		while True:
@@ -494,6 +529,11 @@ if __name__ == "__main__":
 				end_date_reached = False
 				end_of_day_reached = False
 				while updates < JSON_CAPACITY and not end_date_reached:
+
+					### UPDATE [ 8/3/2020 ]
+					check_connection()
+					###
+
 					if (time.time() - last_update) >= INTERVAL:
 						entry_time = getTimestamp()	
 
@@ -573,16 +613,20 @@ if __name__ == "__main__":
 
 			except (KeyboardInterrupt, SystemExit, Exception) as exc:
 				# exc_string = traceback.format_exc()
-				# exc_string = '{}\n'.format(exc.__class__.__name__)
-				# exc_string = '{}  (line #: {})\n'.format(exc.__class__.__name__, sys.exc_info()[2].tb_lineno)
-
 				exc_name = exc.__class__.__name__
 				exc_desc = str(exc)
 				exc_lineno = sys.exc_info()[2].tb_lineno
-				exc_string = '{}:  "{}"  (line {})'.format(exc_name, exc_desc, exc_lineno)
-				
+				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+
+				if exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string):
+					needs_reboot = True
+
 				break
 
 	with open(ERROR_LOGFILE, 'a') as f:
-		f.write('\n[ {} ]\t--> watershed.py exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), exc_string))
+		f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], exc_string))
 
+	if needs_reboot:
+		print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
+		time.sleep(1)
+		os.system("sudo reboot")

@@ -98,7 +98,7 @@ die() {
 	# timestamp >> $ERROR_LOGFILE
 
 	sleep 3s
-	if [ ! $DRY_RUN ]; then
+	if [ $DRY_RUN = false ]; then
 		sudo reboot
 	else
 		exit $FAIL

@@ -94,9 +94,9 @@ echo -e "${first_wtd_install}\n"
 sudo apt-get install -y watchdog chkconfig
 
 if grep -q "bcm2835_wdt" /etc/modules; then
-	echo "==>  bcm2835_wdt Watchdog Kernel Module Loaded"
+	echo -e "\n==>  $(ansi --green --bold bcm2835_wdt Watchdog Kernel Module Loaded)"
 else
-	echo "==>  Now Adding Missing bcm2835_wdt Watchdog Kernel Module to /etc/modules ..."
+	echo -e "\n==>  $(ansi --yellow Now Adding Missing bcm2835_wdt Watchdog Kernel Module to /etc/modules) ..."
 	echo "bcm2835_wdt" | sudo tee -a /etc/modules
 fi
 
@@ -107,9 +107,9 @@ sudo modprobe bcm2835_wdt
 sudo update-rc.d watchdog defaults
 
 if grep -q "watchdog-timeout" /etc/watchdog.conf; then
-	echo "==>  /etc/watchdog.conf Appears to be Correctly Configured"
+	echo -e "\n==>  $(ansi --green --bold /etc/watchdog.conf Appears to be Correctly Configured)"
 else
-	echo "==>  Loading Custom watchdog.conf File to /etc/"
+	echo -e "\n==>  $(ansi --yellow Loading Custom watchdog.conf File to /etc/) ..."
 	if [ -f "${HOME}/watershedpi/watchdog.conf" ]; then
 		sudo mv "${HOME}/watershedpi/watchdog.conf" /etc/
 	else
