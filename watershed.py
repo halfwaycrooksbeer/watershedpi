@@ -426,15 +426,19 @@ def check_connection():
 if __name__ == "__main__":
 	if UPDATE_BASHRC:
 		replace_bashrc = True
+		
 		with open('/home/pi/.bashrc') as f:
 			filedata = f.readlines()
 			for line in filedata:
-				if "launcher.sh" in line:
+				# if "launcher.sh" in line:
+				if "watershedpi.git" in line:
 					replace_bashrc = False
-
+		
 		os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
 		if replace_bashrc:
-			print('[watershed] Replacing ~/.bashrc to use new launcher script')
+			# print('[watershed] Replacing ~/.bashrc to use new launcher script')
+			os.system('echo "[ $(ansi --green --bold .bashrc updated!) ]"')
+			time.sleep(3)
 			os.system('sudo reboot')
 
 	### UPDATE [ 8/3/2020 ]
