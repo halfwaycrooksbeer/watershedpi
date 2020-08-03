@@ -62,6 +62,7 @@ SENSOR_H = 9.1  #9.25
 FILL_H = 2.9  #3.00
 RISER_H = 0.00
 FLUME_SLUMP = 1.2
+MAX_RETRIES = 5
 
 ## Macros
 def IN2CM(inches):
@@ -315,7 +316,7 @@ def network_connected():
 		urllib.request.urlopen("http://www.google.com").close()
 	except Exception as e:
 		if PRINTS_ON:
-			print("[network_connected] Exception: "+e)
+			print("[network_connected] Exception: " + str(e))
 		return False
 	else:
 		return True
@@ -402,7 +403,7 @@ def check_connection():
 	while not network_connected():
 		print('Not connected ...')
 		tries += 1
-		if (tries > 4):
+		if (tries > MAX_RETRIES):
 			print("[ERROR] Could not connect to network!")
 
 			with open(ERROR_LOGFILE, 'a') as f:
@@ -434,26 +435,6 @@ if __name__ == "__main__":
 		if replace_bashrc:
 			print('[watershed] Replacing ~/.bashrc to use new launcher script')
 			os.system('sudo reboot')
-
-	"""
-	tries = 0
-	while not network_connected():
-		print('Not connected ...')
-		tries += 1
-		if (tries > 4):
-			print("[ERROR] Could not connect to network!")
-
-			with open(ERROR_LOGFILE, 'a') as f:
-				f.write('\n[ ? ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(sys.argv[0], "Could not connect to network at program start!\n"))
-
-			print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
-			time.sleep(1)
-			os.system("sudo reboot")
-
-			sys.exit(1)
-
-		time.sleep(3)
-	"""
 
 	### UPDATE [ 8/3/2020 ]
 	check_connection()
@@ -532,6 +513,8 @@ if __name__ == "__main__":
 
 					### UPDATE [ 8/3/2020 ]
 					check_connection()
+					## 	NOTE: If network failure occurs, any measurements since the last successful sheet_manager update 
+					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
 					###
 
 					if (time.time() - last_update) >= INTERVAL:
