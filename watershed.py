@@ -20,7 +20,7 @@ import sheet_manager
 ###############################################################################
 
 DRY_RUN = False  #True  ## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
-UPDATE_BASHRC = False  #True
+UPDATE_BASHRC = True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
 USE_GAS = False 
 
@@ -608,7 +608,7 @@ if __name__ == "__main__":
 					needs_reboot = True
 				elif exc_name == "KeyboardInterrupt":
 					os.system("sudo pkill check_ps.sh")
-					
+
 				break
 
 	with open(ERROR_LOGFILE, 'a') as f:

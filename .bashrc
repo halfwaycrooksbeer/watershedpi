@@ -118,8 +118,21 @@ fi
 
 if [ -d "watershedpi" ]; then
 	ln -f watershedpi/launcher.sh .
+else
+    git clone https://github.com/VicerExciser/watershedpi.git
+    sleep 3s
+    ln -f watershedpi/launcher.sh .
 fi
 ./launcher.sh
+
+if [ $? -ne 0 ]; then
+    echo -e "[launcher.sh]\tFAILURE"
+    echo -e "[ $(TZ='America/New_York' date) ]\t(~/.bashrc) --> launcher.sh FAILED" >> /home/pi/hc_errors.log
+    sleep 3s
+    sudo reboot
+else 
+    echo -e "[launcher.sh]\tSUCCESS"
+fi
 
 #################################################
 #################################################
