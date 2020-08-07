@@ -11,6 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 SIMULATE_END_DATE = False #True
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
+CROOKS_MODE = True 
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
@@ -341,23 +342,6 @@ class SheetManager(metaclass=Singleton):
 
 
 	def get_results(self, date_obj):
-		"""
-		if date is None:
-			# date = get_date_today().strftime(DATE_FORMAT)
-			date = get_datetime_now().strftime(FULL_DATE_FORMAT)
-		elif isinstance(date, dt.datetime):
-			date = date.strftime(FULL_DATE_FORMAT)
-		elif isinstance(date, str):
-			if ',' in date:
-				date = date.split(',')[0]
-			else:
-				split_date = date.split('/')
-				if len(split_date) != 3 or len(split_date[-1]) > 4:
-					# date = get_date_today().strftime(DATE_FORMAT)
-					date = get_datetime_now().strftime(FULL_DATE_FORMAT)
-		else:
-			date = get_datetime_now().strftime(FULL_DATE_FORMAT)
-		"""
 		date = sanitize_date_string(date_obj)
 
 		if self.date_already_processed(date):
@@ -387,21 +371,7 @@ class SheetManager(metaclass=Singleton):
 		if not cell_list:
 			print("[get_results] No entries for '{}' found in worksheet '{}'".format(date, wksht.title))  #self.cur_sheet.wksht_title))
 			return
-			"""
-			# old_wksht_title = "{0}/{2}".format(*date.split('/'))
-			old_m, _, old_y = date.split('/')
-			if len(old_y) == 2:
-				old_y = "20" + old_y
-			old_wksht_title = "{}/{}".format(old_m, old_y)
-			wksht = self.cur_sheet.sheet.worksheet(old_wksht_title)
-			if wksht is not None:
-				cell_list = wksht.findall(date_regex)
-				if not cell_list:
-					print("  ==> No entries for '{}' found in worksheet '{}' either\n".format(date, old_wksht_title))
-					return
-			else:
-				return
-			"""
+
 		start_row = cell_list[0].row
 		end_row = cell_list[-1].row
 
@@ -440,14 +410,14 @@ class SheetManager(metaclass=Singleton):
 		if row_cnt != end_row:
 			print("\n!!! Notice: row_cnt ({}) != end_row ({})\t(start_row = {})\n".format(row_cnt, end_row, start_row))
 
-		day_gallons /= 10.0
+		if CROOKS_MODE:
+			day_gallons /= 10.0
 		self.update_results(date, day_gallons, day_min_p, day_max_p)
 
 
 	def update_results(self, date, gpd, min_ph, max_ph):
 		res_sheet = self.gc.open(self.cur_sheet.title).worksheet(RESULTS_SHEET_NAME)
 		results = [date, gpd, "{} / {}".format(min_ph, max_ph)]
-		# res_sheet.append_row(results)
 		res_sheet.append_row(results, value_input_option=VALUE_INPUT_OPTION)
 		self.center_last_row(res_sheet)
 		print("\n[update_results] Daily results for {0} published to Flow&pH:\n\tgpd:\t{1}\n\tmin/max ph:\t{2}\n".format(*results))
