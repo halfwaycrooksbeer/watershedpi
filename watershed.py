@@ -514,6 +514,7 @@ if __name__ == "__main__":
 			try:
 				payload = list()
 				updates = 0
+				loop_cnt = 0
 				end_date_reached = False
 				end_of_day_reached = False
 				while updates < JSON_CAPACITY and not end_date_reached:
@@ -580,6 +581,9 @@ if __name__ == "__main__":
 						prev_entry_time_obj = entry_time_obj
 
 					time.sleep(0.1)
+					loop_cnt += 1
+					if loop_cnt % 10 == 0:
+						level = round(l_sensor.level, 3)
 
 				if not DRY_RUN:
 					sm.append_data(payload)
