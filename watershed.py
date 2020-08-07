@@ -20,7 +20,7 @@ import sheet_manager
 ###############################################################################
 
 DRY_RUN = False  #True  ## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
-UPDATE_BASHRC = True
+UPDATE_BASHRC = False #True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
 USE_GAS = False 
 
@@ -313,8 +313,9 @@ def setup():
 		initialized = True
 
 def network_connected():
+	test_url = "http://www.github.com"  # "http://www.google.com"
 	try:
-		urllib.request.urlopen("http://www.google.com").close()
+		urllib.request.urlopen(test_url).close()
 	except Exception as e:
 		if PRINTS_ON:
 			print("[network_connected] Exception: " + str(e))
