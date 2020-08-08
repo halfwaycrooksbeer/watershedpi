@@ -1,12 +1,13 @@
 import os
 import sys
+import ast
+import json
+import itertools
+from time import sleep
 
 # print(sys.argv[0])
 # print(__file__)
 # print(__name__)
-from time import sleep
-from itertools import islice
-import json
 
 JSON_CAPACITY = 20
 NUM_PAYLOADS_FILE = "num_payloads.txt"
@@ -98,20 +99,22 @@ def process_missed_payloads():
 	for i in range(num):
 		missed_payload = list()
 		start_line = i * JSON_CAPACITY
+		stop_line = start_line + JSON_CAPACITY
 
 		with open(FAILED_PAYLOADS_FILE) as f:
-			for line in islice(f, start_line, None):	## Skip already processed entries
+			## Syntax:  itertools.islice(iterable, start, stop, step)
+			for line in itertools.islice(f, start_line, stop_line, 1):	## Skip already processed entries
 				line = line.replace("}}", "}},")
 				for str_dict in line.split('},'): 
-					if str_dict:
+					if len(str_dict) > 1:
 						str_dict = str(str_dict).replace("'",'"') + '}'
 						# converted_dict = json.loads(str_dict)
-						import ast
-						converted_dict = ast.literal_eval(str_dict)
-						print(converted_dict)
-						missed_payload.append(converted_dict)	## Use json.loads() to convert dict string to a dict object
+						
+						converted_dict = ast.literal_eval(str_dict)	## Using ast.literal_eval() to convert dict string to a dict object (an alternative to json.loads())
+						missed_payload.append(converted_dict)
 
-		print("[process_missed_payloads]\n-->\tPayload #{}:".format(i))
+		print("[process_missed_payloads]\n-->  Payload #{}:".format(i))
+		# print(missed_payload)
 		for entry in missed_payload:
 			print("\t{}".format(entry))
 		update_num_failed_payloads(-1)

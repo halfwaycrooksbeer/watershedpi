@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 import os
 import sys
+import ast
 import time
 import urllib
 import requests
 import busio
 import board
 import random
+import itertools
 import traceback
 import statistics
 import datetime as dt
@@ -29,7 +31,8 @@ USE_GAS = False
 import json
 CHECK_NETWORK_EACH_ITERATION = False
 PERSIST_OFFLINE = True
-FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.json")
+FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.txt")
+NUM_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "num_payloads.txt")
 MAX_FAILED_PAYLOADS = 20
 total_failed_payloads = 0
 ###
@@ -305,7 +308,7 @@ def map(x, in_min, in_max, out_min, out_max):
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
 def setup():
-	global initialized, i2c, adc, l_sensor, p_sensor, data
+	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads
 	if not initialized:
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
@@ -319,6 +322,22 @@ def setup():
 		if l_sensor is None:
 			l_sensor = LevelSensor(ads=adc)
 		data = dict()
+
+		### UPDATE [ 8/7/2020 ]
+		if os.path.isfile(NUM_PAYLOADS_FILE):
+			with open(NUM_PAYLOADS_FILE) as f:
+				n = f.read()
+			try:
+				total_failed_payloads = int(n)
+				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
+			except ValueError:
+				print('[setup] ValueError --> NUM_PAYLOADS_FILE read out non-number:  "{}"'.format(total_failed_payloads))
+				total_failed_payloads = 0
+		else:
+			print('[setup] No NUM_PAYLOADS_FILE exists yet.')
+			total_failed_payloads = 0
+		###
+
 		initialized = True
 
 def network_connected():
@@ -410,7 +429,6 @@ def get_dt_obj_from_entry_time(et=entry_time):
 
 ### UPDATE [ 8/7/2020 ]
 def check_connection():
-	global total_failed_payloads
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
@@ -427,13 +445,9 @@ def check_connection():
 
 				sys.exit(1)
 			else:
-				# if not CHECK_NETWORK_EACH_ITERATION:
-				# 	total_failed_payloads += 1
-
 				with open(ERROR_LOGFILE, 'a') as f:
 					# f.write('\n[ {} ]\t--> "{}" experienced a network failure (#{}); caching missed payload now to "{}"\n'.format(getTimestamp(), __file__, total_failed_payloads, FAILED_PAYLOADS_FILE))
 					f.write('\n[ {} ]\t--> "{}" experienced a network failure ... \n'.format(getTimestamp(), __file__))
-			
 				return False
 
 		time.sleep(3)
@@ -442,21 +456,59 @@ def check_connection():
 ###
 
 ### UPDATE [ 8/7/2020 ]
-def cache_payload(list_of_json):
+def update_num_failed_payloads(diff=0):
 	global total_failed_payloads
-	total_failed_payloads += 1
+	total_failed_payloads += diff 
+	if total_failed_payloads < 0:
+		total_failed_payloads = 0
+	with open(NUM_PAYLOADS_FILE, 'w') as f:
+		f.write(str(total_failed_payloads))
 
+
+def cache_payload(list_of_json):
+	update_num_failed_payloads(1)
 	failure_msg = '\n[ {} ]\t>>>\t (#{}) Now caching missed payload to "{}"\n'.format(getTimestamp(), total_failed_payloads, FAILED_PAYLOADS_FILE)
 	print(failure_msg)
 	with open(ERROR_LOGFILE, 'a') as f:
 		f.write(failure_msg)
-	
 	with open(FAILED_PAYLOADS_FILE, 'a') as j:
 		for entry in list_of_json:
-			json.dump(entry, j)
+			# json.dump(entry, j)
+			j.write(str(entry).replace("'",'"')+'\n')
+
 
 def process_missed_payloads(sm):
-	global total_failed_payloads
+	num = total_failed_payloads
+	for i in range(num):
+		missed_payload = list()
+		start_line = i * JSON_CAPACITY
+		stop_line = start_line + JSON_CAPACITY
+
+		with open(FAILED_PAYLOADS_FILE) as f:
+			## Syntax:  itertools.islice(iterable, start, stop, step)
+			for line in itertools.islice(f, start_line, stop_line, 1):	## Skip already processed entries
+				line = line.replace("}}", "}},")
+				for str_dict in line.split('},'): 
+					if len(str_dict) > 1:
+						str_dict = str(str_dict).replace("'",'"') + '}'
+						# converted_dict = json.loads(str_dict)
+						converted_dict = ast.literal_eval(str_dict)	## Using ast.literal_eval() to convert dict string to a dict object (an alternative to json.loads())
+						missed_payload.append(converted_dict)
+
+		print("[process_missed_payloads]\n-->  Payload #{}:".format(i))
+		# print(missed_payload)
+		for entry in missed_payload:
+			print("\t{}".format(entry))
+
+		if check_connection():
+			sm.append_data(missed_payload, missed_payload=True)
+			update_num_failed_payloads(-1)
+		else:
+			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
+
+	if total_failed_payloads == 0 and os.path.isfile(FAILED_PAYLOADS_FILE):
+		os.system("rm {}".format(FAILED_PAYLOADS_FILE))
+
 ###
 
 
@@ -559,6 +611,11 @@ if __name__ == "__main__":
 
 		while True:
 			try:
+				### UPDATED [ 8/7/2020 ]
+				if total_failed_payloads > 0:
+					process_missed_payloads(sm)
+				###
+
 				payload = list()
 				updates = 0
 				loop_cnt = 0

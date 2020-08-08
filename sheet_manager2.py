@@ -198,7 +198,19 @@ class SheetManager(metaclass=Singleton):
 			self.cur_sheet = CurrentSheet(self) #self.gc)
 
 
+	def center_row(self, row, sheet=None):
+		if sheet is None:
+			sheet = self.cur_sheet.wksht
+		if not isinstance(sheet, gspread.Worksheet):
+			print("[center_row] ERROR: 'sheet' arg must be of type gspread.Worksheet!")
+			sys.exit()
+		# new_row_range = sheet.range(sheet.row_count, 1, sheet.row_count, sheet.col_count) 	# worksheet.range(first_row, first_col, last_row, last_col)
+		new_row_range = "A{0}:C{0}".format(row)  #sheet.row_count)
+		sheet.format(new_row_range, { "horizontalAlignment": "CENTER" })
+
 	def center_last_row(self, sheet=None):
+		self.center_row(sheet.row_count, sheet)
+		"""
 		if sheet is None:
 			sheet = self.cur_sheet.wksht
 		if not isinstance(sheet, gspread.Worksheet):
@@ -207,7 +219,7 @@ class SheetManager(metaclass=Singleton):
 		# new_row_range = sheet.range(sheet.row_count, 1, sheet.row_count, sheet.col_count) 	# worksheet.range(first_row, first_col, last_row, last_col)
 		new_row_range = "A{0}:C{0}".format(sheet.row_count)
 		sheet.format(new_row_range, { "horizontalAlignment": "CENTER" })
-
+		"""
 	
 
 	def need_newsheet_check(self, entry_time=None):
@@ -291,24 +303,29 @@ class SheetManager(metaclass=Singleton):
 
 		return need
 
-	def append_data(self, list_of_data_dict):
+
+	def append_data(self, list_of_data_dict, missed_payload=False):
 		cnt = 0
 		for data_dict in list_of_data_dict:
 			for date in data_dict.keys():
 				level = data_dict[date]['l']
 				ph = data_dict[date]['p']
 				values = [date.replace(',',', '), level, ph]
-				# self.cur_sheet.wksht.append_row(values, value_input_option='RAW')
-				try:
-					self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
-				except:
-					## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
-					self._gc = None
-					self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
-					self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
-				self.center_last_row()
+				if missed_payload:
+					## ... TODO
+				else:
+					# self.cur_sheet.wksht.append_row(values, value_input_option='RAW')
+					try:
+						self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+					except:
+						## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
+						self._gc = None
+						self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
+						self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+					self.center_last_row()
 				cnt += 1
 		print("[append_data] {} rows appended to sheet {}\n".format(cnt, self.cur_sheet.wksht.title))
+
 
 	def generate_newsheet(self, title=None):
 		if title is None:
