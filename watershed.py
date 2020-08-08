@@ -12,8 +12,9 @@ import statistics
 import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
-import sheet_manager
 
+# import sheet_manager
+import sheet_manager2 as sheet_manager
 
 ###############################################################################
 ## CONSTANTS
@@ -24,6 +25,14 @@ UPDATE_BASHRC = False #True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
 USE_GAS = False 
 
+### UPDATE [ 8/7/2020 ]
+import json
+CHECK_NETWORK_EACH_ITERATION = False
+PERSIST_OFFLINE = True
+FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.json")
+MAX_FAILED_PAYLOADS = 20
+total_failed_payloads = 0
+###
 ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
 DEBUG = True
@@ -399,8 +408,9 @@ def get_dt_obj_from_entry_time(et=entry_time):
 		hr += 12
 	return dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
 
-### UPDATE [ 8/3/2020 ]
+### UPDATE [ 8/7/2020 ]
 def check_connection():
+	global total_failed_payloads
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
@@ -408,17 +418,53 @@ def check_connection():
 		if (tries > MAX_RETRIES):
 			print("[ERROR] Could not connect to network!")
 
-			with open(ERROR_LOGFILE, 'a') as f:
-				f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], "Could not connect to network at program start!\n"))
+			if not PERSIST_OFFLINE:
+				with open(ERROR_LOGFILE, 'a') as f:
+					f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), __file__, "Network failure\n"))
+				print("\n'{}' terminating  -->  initiating system reboot\n".format(__file__))
+				time.sleep(1)
+				os.system("sudo reboot")
 
-			print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
-			time.sleep(1)
-			os.system("sudo reboot")
+				sys.exit(1)
+			else:
+				# if not CHECK_NETWORK_EACH_ITERATION:
+				# 	total_failed_payloads += 1
 
-			sys.exit(1)
+				with open(ERROR_LOGFILE, 'a') as f:
+					# f.write('\n[ {} ]\t--> "{}" experienced a network failure (#{}); caching missed payload now to "{}"\n'.format(getTimestamp(), __file__, total_failed_payloads, FAILED_PAYLOADS_FILE))
+					f.write('\n[ {} ]\t--> "{}" experienced a network failure ... \n'.format(getTimestamp(), __file__))
 			
+				return False
+
 		time.sleep(3)
+
+	return True
 ###
+
+### UPDATE [ 8/7/2020 ]
+def cache_payload(list_of_json):
+	global total_failed_payloads
+	total_failed_payloads += 1
+
+	failure_msg = '\n[ {} ]\t>>>\t (#{}) Now caching missed payload to "{}"\n'.format(getTimestamp(), total_failed_payloads, FAILED_PAYLOADS_FILE)
+	print(failure_msg)
+	with open(ERROR_LOGFILE, 'a') as f:
+		f.write(failure_msg)
+	
+	with open(FAILED_PAYLOADS_FILE, 'a') as j:
+		for entry in list_of_json:
+			json.dump(entry, j)
+
+def process_missed_payloads(sm):
+	global total_failed_payloads
+###
+
+
+class MaxFailedPayloadsError(Exception):
+	def __init__(self, message="Limit has been reached for missed payloads -- system reboot required"):
+		self.message = message
+		super().__init__(self.message)
+
 
 ###############################################################################
 ## LAUNCHER
@@ -435,7 +481,8 @@ if __name__ == "__main__":
 				if "watershedpi.git" in line:
 					replace_bashrc = False
 		
-		os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
+		if os.path.isfile(os.path.join(os.environ['HOME'], 'watershedpi', '.bashrc')):
+			os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
 		if replace_bashrc:
 			# print('[watershed] Replacing ~/.bashrc to use new launcher script')
 			os.system('echo "[ $(ansi --green --bold .bashrc updated!) ]"')
@@ -520,7 +567,8 @@ if __name__ == "__main__":
 				while updates < JSON_CAPACITY and not end_date_reached:
 
 					### UPDATE [ 8/3/2020 ]
-					check_connection()
+					if CHECK_NETWORK_EACH_ITERATION:
+						check_connection()
 					## 	NOTE: If network failure occurs, any measurements since the last successful sheet_manager update 
 					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
 					###
@@ -586,7 +634,19 @@ if __name__ == "__main__":
 						level = round(l_sensor.level, 3)
 
 				if not DRY_RUN:
-					sm.append_data(payload)
+					### UPDATE [ 8/7/2020 ]
+					if not CHECK_NETWORK_EACH_ITERATION:
+						if check_connection():
+							sm.append_data(payload)
+						elif PERSIST_OFFLINE:
+							## Cache the failed payload
+							cache_payload(payload)
+							if total_failed_payloads >= MAX_FAILED_PAYLOADS:
+								needs_reboot = True
+								raise MaxFailedPayloadsError()
+					else:
+						sm.append_data(payload)
+					###
 
 				if end_of_day_reached:
 					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
@@ -613,17 +673,28 @@ if __name__ == "__main__":
 				exc_lineno = sys.exc_info()[2].tb_lineno
 				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
 
-				if exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string):
-					needs_reboot = True
+				### UPDATE [ 8/7/2020 ]
+				was_network_error = exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string)
+				if was_network_error or exc_name == "MaxFailedPayloadsError":
+					if not PERSIST_OFFLINE:
+						needs_reboot = True
+						break
+					elif CHECK_NETWORK_EACH_ITERATION:
+						# total_failed_payloads += 1
+						cache_payload(payload)
+						if total_failed_payloads >= MAX_FAILED_PAYLOADS:
+							needs_reboot = True
+							break
+				###
 				elif exc_name == "KeyboardInterrupt":
 					os.system("sudo pkill check_ps.sh")
-
-				break
+					break
+				
 
 	with open(ERROR_LOGFILE, 'a') as f:
-		f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], exc_string))
+		f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), __file__, exc_string))
 
 	if needs_reboot:
-		print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
+		print("\n'{}' terminating  -->  initiating system reboot\n".format(__file__))
 		time.sleep(1)
 		os.system("sudo reboot")
