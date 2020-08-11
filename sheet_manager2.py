@@ -248,7 +248,7 @@ class Entry():
 	def wksht(self):
 		## TODO: Perform check for needing to open an older workshet for a previous month (see get_results(), refresh(), etc.)
 		## TODO: Insert try-except case for when gspread client (`self.gc`) needs to call `open(sheet_title).worksheet(worksheet_title)` after authentication creds expire
-		return self.cur_sheet.wksht
+		return self.sheet.wksht
 	
 	@property
 	def sheet_row(self):
@@ -437,8 +437,9 @@ class SheetManager(metaclass=Singleton):
 			payload.append(entry.values)
 
 		## Attempt a batch insertion to the worksheet (calling insert_row() for each entry would be excessive)
+		## TODO: Perform try-except handling for insert_rows() in case gspread client creds must be refreshed (see: append_data())
 		first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
-		self.center_rows(insert_at_row, insert_at_row+len(payload), sheet=first_entry.wksht)
+		self.center_rows(insert_at_row, end_row=(insert_at_row+len(payload)), sheet=first_entry.wksht)
 		print("[insert_missed_payload] {} rows inserted to worksheet {}\n".format(len(payload), first_entry.wksht.title))
 		return True
 	###

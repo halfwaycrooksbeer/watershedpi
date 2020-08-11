@@ -650,7 +650,7 @@ if __name__ == "__main__":
 				while updates < JSON_CAPACITY and not end_date_reached:
 
 					### UPDATE [ 8/3/2020 ]
-					if CHECK_NETWORK_EACH_ITERATION  or not online:
+					if CHECK_NETWORK_EACH_ITERATION:  #  or not online:
 						check_connection()
 					## 	NOTE: If network failure occurs, any measurements since the last successful sheet_manager update 
 					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
