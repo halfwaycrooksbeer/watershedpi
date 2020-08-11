@@ -15,8 +15,12 @@ import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
 
-# import sheet_manager
-import sheet_manager2 as sheet_manager
+
+ON_DEV_BRANCH = True 
+if not ON_DEV_BRANCH:
+	import sheet_manager
+else:
+	import sheet_manager2 as sheet_manager
 
 ###############################################################################
 ## CONSTANTS
@@ -69,7 +73,7 @@ ZERO = 5
 WARNING = 6
 
 ## Program values
-INTERVAL = 15 	## seconds
+INTERVAL = 15 if not ON_DEV_BRANCH else 3 	## seconds
 JSON_CAPACITY = 20
 NSAMPLES = 8
 SPIKE_THRESH = 0.14		## perhaps try 0.25 && 0.5 as well...
@@ -419,7 +423,7 @@ def get_tomorrow(today=None):
 	tomorrow = today + one_day
 	return tomorrow
 
-def get_dt_obj_from_entry_time(et=entry_time):
+def get_dt_obj_from_entry_time(et=entry_time):	## NOT using this function as of 8/10/2020
 	if et is None:
 		return sheet_manager.get_datetime_now()
 	# entry_time_date, entry_time_time = entry_time.split(',')
@@ -606,10 +610,11 @@ if __name__ == "__main__":
 		entry_time = getTimestamp(entry_time_obj)
 
 		# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
-		entry_time_obj2 = sheet_manager.datestr_to_datetime(entry_time)
-		print("entry_time_obj == entry_time_obj2 ?:\t{}\nentry_time_obj:\t{}\nentry_time_obj2:\t{}\n".format(entry_time_obj==entry_time_obj2, entry_time_obj, entry_time_obj2))
+		# entry_time_obj2 = sheet_manager.datestr_to_datetime(entry_time)
+		# print("entry_time_obj == entry_time_obj2 ?:\t{}\nentry_time_obj:\t{}\nentry_time_obj2:\t{}\n".format(entry_time_obj==entry_time_obj2, entry_time_obj, entry_time_obj2))
 		
-		prev_entry_time_obj = entry_time_obj
+		# prev_entry_time_obj = entry_time_obj
+		prev_entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 		initial_results_date_check_made = False 
 
 		try:

@@ -40,7 +40,7 @@ INTERVAL_MONTHS = 4  #3 ## Good options: 3, 4, preferrably 6
 INTERVAL_WEEKS = INTERVAL_MONTHS * 4
 INTERVAL_DAYS = INTERVAL_WEEKS * 7
 
-MEASUREMENT_INTERVAL = 15  ## seconds
+MEASUREMENT_INTERVAL = 3  ## <-- for DEV branch work  # 15  ## seconds
 
 GAL_PER_CUBIC_FT = 7.480543
 K = 0.338
@@ -419,7 +419,6 @@ class SheetManager(metaclass=Singleton):
 	def insert_missed_payload(self, list_of_data_dict):
 		## Return True or False to indicate success vs. failure for the insertion operation
 		print("[insert_missed_payload]  PROCESSING MISSED PAYLOAD  ...")
-		## ... TODO
 		# first_entry = list_of_data_dict[0]
 		# first_entry_dt_str = extract_date_from_entry(first_entry, as_dt_object=False)
 		# first_entry_dt_obj = datestr_to_datetime(first_entry_dt_str)		
@@ -437,13 +436,6 @@ class SheetManager(metaclass=Singleton):
 			entry = Entry(dict_entry, self.cur_sheet, row=r, client=self.gc, find_on_init=False)
 			payload.append(entry.values)
 
-		"""
-		# last_entry = list_of_data_dict[-1]
-		# last_entry_dt_str = extract_date_from_entry(last_entry, as_dt_object=False)
-		# last_entry_dt_obj = datestr_to_datetime(last_entry_dt_str)
-		last_entry = Entry(list_of_data_dict[-1], self.cur_sheet, client=self.gc, find_on_init=True)
-		"""
-
 		## Attempt a batch insertion to the worksheet (calling insert_row() for each entry would be excessive)
 		first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 		self.center_rows(insert_at_row, insert_at_row+len(payload), sheet=first_entry.wksht)
@@ -451,7 +443,25 @@ class SheetManager(metaclass=Singleton):
 		return True
 	###
 
-
+	def append_data(self, list_of_data_dict):	## Performs a batch append operation
+		payload = list()
+		for dict_entry in list_of_data_dict:
+			entry = Entry(dict_entry, self.cur_sheet, find_on_init=False)
+			payload.append(entry.values)
+		try:
+			self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
+		except:
+			## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
+			self._gc = None
+			self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
+			self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+		
+		last_row = self.cur_sheet.wksht.row_count
+		start_row = last_row - len(payload)
+		self.center_rows(start_row, end_row=last_row, sheet=self.cur_sheet.wksht)
+		print("[append_data] {} rows appended to sheet {}\n".format(len(payload), self.cur_sheet.wksht.title))
+		
+	"""
 	def append_data(self, list_of_data_dict):  # , missed_payload=False):
 		cnt = 0
 		for data_dict in list_of_data_dict:
@@ -470,7 +480,7 @@ class SheetManager(metaclass=Singleton):
 				self.center_last_row()
 				cnt += 1
 		print("[append_data] {} rows appended to sheet {}\n".format(cnt, self.cur_sheet.wksht.title))
-
+	"""
 
 	def generate_newsheet(self, title=None):
 		if title is None:
