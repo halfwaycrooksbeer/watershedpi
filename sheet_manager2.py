@@ -454,13 +454,13 @@ class SheetManager(metaclass=Singleton):
 			## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
 			self._gc = None
 			self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
-			self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+			self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
 		
 		last_row = self.cur_sheet.wksht.row_count
 		start_row = last_row - len(payload)
 		self.center_rows(start_row, end_row=last_row, sheet=self.cur_sheet.wksht)
 		print("[append_data] {} rows appended to sheet {}\n".format(len(payload), self.cur_sheet.wksht.title))
-		
+
 	"""
 	def append_data(self, list_of_data_dict):  # , missed_payload=False):
 		cnt = 0
