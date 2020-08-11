@@ -17,9 +17,9 @@ TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
 
 CREDSFILE = os.path.join(os.environ['HOME'], "watershed_private.json")
-CURSHEETFILE = os.path.join(os.environ['HOME'], "cur_sheet.json")
-PUBLISHED_DATES_FILE = os.path.join(os.environ['HOME'], "published_dates.txt")
-SHEET_URL_FILE = os.path.join(os.environ['HOME'], "sheet_url.txt")
+CURSHEETFILE = os.path.join(os.environ['HOME'], "cur_sheet2.json")
+PUBLISHED_DATES_FILE = os.path.join(os.environ['HOME'], "published_dates2.txt")
+SHEET_URL_FILE = os.path.join(os.environ['HOME'], "sheet_url2.txt")
 
 SCOPE = [
 			'https://spreadsheets.google.com/feeds',
