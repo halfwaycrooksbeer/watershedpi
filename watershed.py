@@ -527,7 +527,11 @@ def process_missed_payloads(sm):
 			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
 
 	if total_failed_payloads == 0 and os.path.isfile(FAILED_PAYLOADS_FILE):
+		completion_msg = "[{}] process_missed_payloads():  All {} missing payloads have been processed; removing FAILED_PAYLOADS_FILE: '{}'".format(getTimestamp(), num, FAILED_PAYLOADS_FILE)
+		print(completion_msg)
 		os.system("rm {}".format(FAILED_PAYLOADS_FILE))
+		with open(ERROR_LOGFILE, 'a') as f:
+			f.write(completion_msg)
 
 ###
 

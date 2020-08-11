@@ -422,6 +422,8 @@ class SheetManager(metaclass=Singleton):
 		# first_entry = list_of_data_dict[0]
 		# first_entry_dt_str = extract_date_from_entry(first_entry, as_dt_object=False)
 		# first_entry_dt_obj = datestr_to_datetime(first_entry_dt_str)		
+
+		## TODO: Check that the date range of `self.cur_sheet` aligns with the first entry's date!
 		first_entry = Entry(list_of_data_dict[0], self.cur_sheet, client=self.gc, find_on_init=True)
 		insert_at_row = first_entry.sheet_row
 		if not insert_at_row:
@@ -431,14 +433,21 @@ class SheetManager(metaclass=Singleton):
 
 		payload = list()
 		payload.append(first_entry.values)
+
+		## TODO: Check for & handle month/worksheet roll-overs within a group of payload entries
 		for dict_entry in list_of_data_dict[1:]:
 			r = insert_at_row + len(payload)
 			entry = Entry(dict_entry, self.cur_sheet, row=r, client=self.gc, find_on_init=False)
 			payload.append(entry.values)
 
 		## Attempt a batch insertion to the worksheet (calling insert_row() for each entry would be excessive)
-		## TODO: Perform try-except handling for insert_rows() in case gspread client creds must be refreshed (see: append_data())
-		first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
+		try:
+			first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
+		except:
+			## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
+			self._gc = None
+			first_entry.wksht = self.gc.open(first_entry.sheet.title).worksheet(first_entry.sheet.wksht_title)
+			first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 		self.center_rows(insert_at_row, end_row=(insert_at_row+len(payload)), sheet=first_entry.wksht)
 		print("[insert_missed_payload] {} rows inserted to worksheet {}\n".format(len(payload), first_entry.wksht.title))
 		return True
