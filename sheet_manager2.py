@@ -26,9 +26,11 @@ SCOPE = [
 			'https://www.googleapis.com/auth/drive'
 		]
 
-ENTRY_TIME_FORMAT = "%m/%d/%Y,%I:%M:%S %p"
-FULL_DATE_FORMAT = "%-m/%-d/%-y"
-DATE_FORMAT = "%-m/%Y"
+# ENTRY_TIME_FORMAT = "%m/%d/%Y,%I:%M:%S %p"
+ENTRY_TIME_FORMAT = "%-m/%-d/%Y,%I:%M:%S %p"
+# FULL_DATE_FORMAT = "%-m/%-d/%-y"  ## Including the "-" in the time format specifier will strip all leading zeros
+FULL_DATE_FORMAT = "%-m/%-d/%Y"  ## Including the "-" in the time format specifier will strip all leading zeros
+DATE_FORMAT = "%-m/%Y"			  ## %y is year without century (e.g., "19"), %Y includes the century (e.g., "2019")
 SHORT_DATE_FORMAT = "{0}/{1}"
 DATE_RANGE_FORMAT = "{0}-{1}"
 NAME_FORMAT = "FlumeData_{0}"
@@ -58,14 +60,14 @@ def get_date_today():
 	today = dt.date.today()
 	## ... add some timedelta before returning to simulate future dates (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		today += dt.timedelta(days=57, hours=3, minutes=50)
+		today += dt.timedelta(days=57) #, hours=3, minutes=50)
 	return today
 
 def get_datetime_now():
 	now = dt.datetime.now()
 	## ... add some timedelta before returning to simulate future datetimes (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		now += dt.timedelta(days=57, hours=3, minutes=50)
+		now += dt.timedelta(days=57) #, hours=3, minutes=50)
 	return now
 
 def get_last_published_date():
@@ -108,8 +110,6 @@ def get_timestamp(dt_obj=None):
 		d_str = d_str[1:]
 	dt_str = '/'.join([m_str, d_str, *(dt_str.split('/')[2:])])
 	return dt_str
-
-# def get_dt_for_last_day_of_month(m):
 
 def get_month_range(m=0):
 	start_month = 0
@@ -177,6 +177,103 @@ def sanitize_date_string(date=None):
 	return date_str
 
 
+### UPDATE [ 8/10/2020 ]
+def extract_date_from_entry(entry_dict, as_dt_object=False):
+	## Returns date string by default; change with flag `as_dt_object`
+	date_str = list(entry_dict.keys())[0]
+	if as_dt_object:
+		return datestr_to_datetime(date_str)
+	return date_str
+
+def datestr_to_datetime(date_str):
+	if not ',' in date_str:
+		return None 
+	if not isinstance(date_str, str):
+		return None 
+	entry_date, entry_time = date_str.split(',')
+	entry_time = entry_time.strip()
+	m, d, y = entry_date.split('/')
+	hr, mn, scampm = entry_time.split(':')
+	hr = int(hr) #-1
+	mn = int(mn)
+	sc, ampm = scampm.split(' ')
+	sc = int(sc)
+	# if ampm == 'PM':
+		# hr += 12
+	if ampm == 'AM':
+		hr -= 12
+	dt_obj = dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
+	return dt_obj
+
+###
+
+### UPDATE [ 8/10/2020 ]
+class Entry():
+	def __init__(self, entry_dict, cur_sheet, row=0, client=None, find_on_init=True):
+		self.dict = entry_dict
+		self.dt_str = list(entry_dict.keys())[0]
+		self.dt_obj = datestr_to_datetime(self.dt_str)
+
+		self.sheet = cur_sheet
+		# self.wksht = self.sheet.wksht
+		self.gc = client
+		
+		self._sheet_row = row
+		if find_on_init:
+			self._sheet_row = self.sheet_row
+
+	@property
+	def level(self):
+		return self.dict[self.dt_str]['l']
+
+	@property
+	def ph(self):
+		return self.dict[self.dt_str]['p']
+
+	@property
+	def values(self):
+		return [self.dt_str.replace(', ',',').replace(',',', '), self.level, self.ph]
+
+	@property
+	def date_str(self):
+		## e.g., "10/31/2020"
+		return self.dt_str.split(',')[0]
+
+	@property
+	def time_str(self):
+		## e.g., "12:00:30 AM"
+		return self.dt_str.split(',')[1]
+	
+	@property
+	def wksht(self):
+		## TODO: Perform check for needing to open an older workshet for a previous month (see get_results(), refresh(), etc.)
+		## TODO: Insert try-except case for when gspread client (`self.gc`) needs to call `open(sheet_title).worksheet(worksheet_title)` after authentication creds expire
+		return self.cur_sheet.wksht
+	
+	@property
+	def sheet_row(self):
+		if self._sheet_row < 2 or self._sheet_row is None:
+			## Search current worksheet for correct row position for this entry (according to date-time)
+			date_regex = re.compile(r'\A{}'.format(self.dt_obj.strftime(FULL_DATE_FORMAT)))
+			cell_list = self.wksht.findall(date_regex, in_column=1)
+			for i in range(len(cell_list)-1):
+				this_cell = cell_list[i]
+				this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
+				if this_date < self.dt_obj:
+					next_cell = cell_list[i+1]
+					next_date = datestr_to_datetime(next_cell.value)
+					if self.dt_obj < next_date:
+						self._sheet_row = next_cell.row 
+						break
+		if self._sheet_row < 2 or self._sheet_row is None:
+			print("[Entry.sheet_row]  ERROR: No suitable row found for entry date-time '{}'!".format(self.dt_str))	
+		return self._sheet_row
+	
+
+###
+
+
+
 class Singleton(type):
 	_instances = {}
 	def __call__(cls, *args, **kwargs):
@@ -198,15 +295,22 @@ class SheetManager(metaclass=Singleton):
 			self.cur_sheet = CurrentSheet(self) #self.gc)
 
 
-	def center_row(self, row, sheet=None):
+	def center_rows(self, start_row, end_row=None, sheet=None):
 		if sheet is None:
 			sheet = self.cur_sheet.wksht
 		if not isinstance(sheet, gspread.Worksheet):
-			print("[center_row] ERROR: 'sheet' arg must be of type gspread.Worksheet!")
+			err_msg = "[center_rows] ERROR: 'sheet' arg must be of type gspread.Worksheet!"
+			print(err_msg)
+			raise Exception(err_msg)
 			sys.exit()
+		if end_row is None:
+			end_row = start_row
 		# new_row_range = sheet.range(sheet.row_count, 1, sheet.row_count, sheet.col_count) 	# worksheet.range(first_row, first_col, last_row, last_col)
-		new_row_range = "A{0}:C{0}".format(row)  #sheet.row_count)
+		new_row_range = "A{0}:C{0}".format(start_row, end_row)  #sheet.row_count)
 		sheet.format(new_row_range, { "horizontalAlignment": "CENTER" })
+
+	def center_row(self, row, sheet=None):
+		self.center_rows(row, row, sheet)
 
 	def center_last_row(self, sheet=None):
 		self.center_row(sheet.row_count, sheet)
@@ -231,28 +335,36 @@ class SheetManager(metaclass=Singleton):
 			today = get_datetime_now()
 			entry_time = get_timestamp(today)
 		elif isinstance(entry_time, str):
-			entry_time_date = entry_time.split(',')[0]
+			"""
+			entry_time_date, entry_time_time = entry_time.split(',')
+			# entry_time_date = entry_time.split(',')[0]
 			# print("[need_newsheet_check] entry_time_date = "+entry_time_date)
 			m, d, y = entry_time_date.split('/')
 			m = int(m)
 			d = int(d)
 			y = int(y)
 			# today = dt.date(y, m, d)
-			entry_time_time = entry_time.split(',')[1]
+			# entry_time_time = entry_time.split(',')[1]
 			hr, mn, scampm = entry_time_time.split(':')
-			hr = int(hr)-1
+			hr = int(hr) #-1
 			mn = int(mn)
 			sc, ampm = scampm.split(' ')
 			sc = int(sc)
-			if ampm == 'PM':
-				hr += 12
+			# if ampm == 'PM':
+			# 	hr += 12
+			if ampm == 'AM':
+				hr -= 12
 			today = dt.datetime(y, m, d, hour=hr, minute=mn, second=sc)
+			"""
+			today = datestr_to_datetime(entry_time)
 			entry_time = get_timestamp(today)
 		elif isinstance(entry_time, dt.date):
 			today = entry_time
 			entry_time = get_timestamp(today)
 		else:
-			print("[need_newsheet_check] BAD INPUT FOR entry_time:\t"+entry_time)
+			fail_msg = "[need_newsheet_check] BAD INPUT FOR entry_time:\t" + str(entry_time)
+			print(fail_msg)
+			raise Exception(message=fail_msg)
 			sys.exit()
 
 
@@ -303,26 +415,59 @@ class SheetManager(metaclass=Singleton):
 
 		return need
 
+	### UPDATE [ 8/10/2020 ]
+	def insert_missed_payload(self, list_of_data_dict):
+		## Return True or False to indicate success vs. failure for the insertion operation
+		print("[insert_missed_payload]  PROCESSING MISSED PAYLOAD  ...")
+		## ... TODO
+		# first_entry = list_of_data_dict[0]
+		# first_entry_dt_str = extract_date_from_entry(first_entry, as_dt_object=False)
+		# first_entry_dt_obj = datestr_to_datetime(first_entry_dt_str)		
+		first_entry = Entry(list_of_data_dict[0], self.cur_sheet, client=self.gc, find_on_init=True)
+		insert_at_row = first_entry.sheet_row
+		if not insert_at_row:
+			## TODO: Throw an exception here or something; indicate a serious error
+			print("[insert_missed_payload]  ERROR: First entry row / insertion point could not be determined; aborting operation ...")
+			return False
 
-	def append_data(self, list_of_data_dict, missed_payload=False):
+		payload = list()
+		payload.append(first_entry.values)
+		for dict_entry in list_of_data_dict[1:]:
+			r = insert_at_row + len(payload)
+			entry = Entry(dict_entry, self.cur_sheet, row=r, client=self.gc, find_on_init=False)
+			payload.append(entry.values)
+
+		"""
+		# last_entry = list_of_data_dict[-1]
+		# last_entry_dt_str = extract_date_from_entry(last_entry, as_dt_object=False)
+		# last_entry_dt_obj = datestr_to_datetime(last_entry_dt_str)
+		last_entry = Entry(list_of_data_dict[-1], self.cur_sheet, client=self.gc, find_on_init=True)
+		"""
+
+		## Attempt a batch insertion to the worksheet (calling insert_row() for each entry would be excessive)
+		first_entry.wksht.insert_rows(payload, row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
+		self.center_rows(insert_at_row, insert_at_row+len(payload), sheet=first_entry.wksht)
+		print("[insert_missed_payload] {} rows inserted to worksheet {}\n".format(len(payload), first_entry.wksht.title))
+		return True
+	###
+
+
+	def append_data(self, list_of_data_dict):  # , missed_payload=False):
 		cnt = 0
 		for data_dict in list_of_data_dict:
 			for date in data_dict.keys():
 				level = data_dict[date]['l']
 				ph = data_dict[date]['p']
-				values = [date.replace(',',', '), level, ph]
-				if missed_payload:
-					## ... TODO
-				else:
-					# self.cur_sheet.wksht.append_row(values, value_input_option='RAW')
-					try:
-						self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
-					except:
-						## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
-						self._gc = None
-						self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
-						self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
-					self.center_last_row()
+				values = [date.replace(', ',',').replace(',',', '), level, ph]
+				# self.cur_sheet.wksht.append_row(values, value_input_option='RAW')
+				try:
+					self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+				except:
+					## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
+					self._gc = None
+					self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
+					self.cur_sheet.wksht.append_row(values, value_input_option=VALUE_INPUT_OPTION)
+				self.center_last_row()
 				cnt += 1
 		print("[append_data] {} rows appended to sheet {}\n".format(cnt, self.cur_sheet.wksht.title))
 
@@ -359,6 +504,7 @@ class SheetManager(metaclass=Singleton):
 
 
 	def get_results(self, date_obj):
+		## Process date as a string in FULL_DATE_FORMAT (m/d/y)
 		date = sanitize_date_string(date_obj)
 
 		if self.date_already_processed(date):
@@ -383,7 +529,7 @@ class SheetManager(metaclass=Singleton):
 			wksht = self.worksheet
 
 		if wksht is not None:
-			cell_list = wksht.findall(date_regex)
+			cell_list = wksht.findall(date_regex, in_column=1)
 
 		if not cell_list:
 			print("[get_results] No entries for '{}' found in worksheet '{}'".format(date, wksht.title))  #self.cur_sheet.wksht_title))

@@ -35,6 +35,8 @@ FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.txt")
 NUM_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "num_payloads.txt")
 MAX_FAILED_PAYLOADS = 20
 total_failed_payloads = 0
+online = False 
+# offline = True
 ###
 ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
@@ -308,7 +310,7 @@ def map(x, in_min, in_max, out_min, out_max):
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
 def setup():
-	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads
+	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads, online
 	if not initialized:
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
@@ -338,18 +340,22 @@ def setup():
 			total_failed_payloads = 0
 		###
 
+		# online = False
 		initialized = True
 
 def network_connected():
+	global online
 	test_url = "http://www.github.com"  # "http://www.google.com"
 	try:
 		urllib.request.urlopen(test_url).close()
 	except Exception as e:
 		if PRINTS_ON:
 			print("[network_connected] Exception: " + str(e))
-		return False
+		online = False
+		return online
 	else:
-		return True
+		online = True
+		return online
 
 def parseflume_state():
 	global flume_state_str
@@ -416,7 +422,8 @@ def get_tomorrow(today=None):
 def get_dt_obj_from_entry_time(et=entry_time):
 	if et is None:
 		return sheet_manager.get_datetime_now()
-	entry_time_date, entry_time_time = entry_time.split(',')
+	# entry_time_date, entry_time_time = entry_time.split(',')
+	entry_time_date, entry_time_time = et.split(',')
 	m, d, y = entry_time_date.split('/')
 	hr, mn, scampm = entry_time_time.split(':')
 	hr = int(hr)-1
@@ -429,12 +436,14 @@ def get_dt_obj_from_entry_time(et=entry_time):
 
 ### UPDATE [ 8/7/2020 ]
 def check_connection():
+	# global offline
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
 		tries += 1
 		if (tries > MAX_RETRIES):
 			print("[ERROR] Could not connect to network!")
+			# offline = True
 
 			if not PERSIST_OFFLINE:
 				with open(ERROR_LOGFILE, 'a') as f:
@@ -451,7 +460,7 @@ def check_connection():
 				return False
 
 		time.sleep(3)
-
+	# offline = False
 	return True
 ###
 
@@ -501,8 +510,15 @@ def process_missed_payloads(sm):
 			print("\t{}".format(entry))
 
 		if check_connection():
-			sm.append_data(missed_payload, missed_payload=True)
-			update_num_failed_payloads(-1)
+			# sm.append_data(missed_payload, missed_payload=True)
+			try:
+				success = sm.insert_missed_payload(missed_payload)
+				if success:
+					update_num_failed_payloads(-1)
+				else:
+					print("[process_missed_payloads]  INSERTION FAILED FOR PAYLOAD #{}!".format(i))
+			except Exception as e:
+				print("[process_missed_payloads]  INSERTION INCURRED AN EXCEPTION FOR PAYLOAD #{}!\n  -->  {}\n".format(i, e))
 		else:
 			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
 
@@ -586,8 +602,13 @@ if __name__ == "__main__":
 				break
 	else:
 		sm = sheet_manager.SheetManager()
-		entry_time = getTimestamp()
-		entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
+		entry_time_obj = sheet_manager.get_datetime_now()
+		entry_time = getTimestamp(entry_time_obj)
+
+		# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
+		entry_time_obj2 = sheet_manager.datestr_to_datetime(entry_time)
+		print("entry_time_obj == entry_time_obj2 ?:\t{}".format(entry_time_obj==entry_time_obj2))
+		
 		prev_entry_time_obj = entry_time_obj
 		initial_results_date_check_made = False 
 
@@ -612,7 +633,7 @@ if __name__ == "__main__":
 		while True:
 			try:
 				### UPDATED [ 8/7/2020 ]
-				if total_failed_payloads > 0:
+				if online and total_failed_payloads > 0:
 					process_missed_payloads(sm)
 				###
 
@@ -624,7 +645,7 @@ if __name__ == "__main__":
 				while updates < JSON_CAPACITY and not end_date_reached:
 
 					### UPDATE [ 8/3/2020 ]
-					if CHECK_NETWORK_EACH_ITERATION:
+					if CHECK_NETWORK_EACH_ITERATION  or not online:
 						check_connection()
 					## 	NOTE: If network failure occurs, any measurements since the last successful sheet_manager update 
 					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
@@ -634,7 +655,8 @@ if __name__ == "__main__":
 						entry_time = getTimestamp()	
 
 						## Detect change in day (roll-over) for computing daily flow results
-						entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
 

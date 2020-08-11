@@ -4,6 +4,7 @@ import ast
 import json
 import itertools
 from time import sleep
+import datetime as dt
 
 # print(sys.argv[0])
 # print(__file__)
@@ -39,26 +40,26 @@ payload1 = [
 ]
 
 payload2 = [ 
-	{'10/5/2020,12:00:00 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:00:15 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:00:30 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:00:45 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:01:00 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:01:15 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:01:30 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:01:45 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:02:00 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:02:15 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:02:30 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:02:45 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:03:00 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:03:15 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:03:30 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:03:45 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:04:00 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:04:15 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:04:30 AM': {'p': 7.83, 'l': 1.7}},
-	{'10/5/2020,12:04:45 AM': {'p': 7.83, 'l': 1.7}}
+	{'10/5/2020,12:00:00 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:00:15 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:00:30 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:00:45 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:01:00 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:01:15 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:01:30 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:01:45 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:02:00 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:02:15 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:02:30 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:02:45 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:03:00 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:03:15 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:03:30 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:03:45 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:04:00 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:04:15 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:04:30 PM': {'p': 7.83, 'l': 1.7}},
+	{'10/5/2020,12:04:45 PM': {'p': 7.83, 'l': 1.7}}
 ]
 
 def setup():
@@ -94,6 +95,60 @@ def cache_payload(list_of_json):
 			j.write(str(entry).replace("'",'"')+'\n')
 
 
+def extract_date_from_entry(entry_dict, as_dt_object=False):
+	date_str = list(entry_dict.keys())[0]
+	if as_dt_object:
+		return datestr_to_datetime(date_str)
+	return date_str
+
+def datestr_to_datetime(date_str):
+	if not ',' in date_str:
+		return None 
+	if not isinstance(date_str, str):
+		return None 
+	entry_date, entry_time = date_str.split(',')
+	m, d, y = entry_date.split('/')
+	hr, mn, scampm = entry_time.split(':')
+	hr = int(hr) #-1
+	mn = int(mn)
+	sc, ampm = scampm.split(' ')
+	sc = int(sc)
+	# if ampm == 'PM':
+		# hr += 12
+	if ampm == 'AM':
+		hr -= 12
+	dt_obj = dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
+	return dt_obj
+
+
+def get_dt_obj_from_entry_time(et=None):	## Don't use...
+	if et is None:
+		return dt.datetime.now()
+	entry_time_date, entry_time_time = et.split(',')
+	m, d, y = entry_time_date.split('/')
+	hr, mn, scampm = entry_time_time.split(':')
+	hr = int(hr)-1
+	mn = int(mn)
+	sc, ampm = scampm.split(' ')
+	sc = int(sc)
+	if ampm == 'PM':
+		hr += 12
+	return dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
+"""
+def get_timestamp(dt_obj=None):
+	if dt_obj is None:
+		dt_obj = get_datetime_now()
+	dt_str = dt_obj.strftime(ENTRY_TIME_FORMAT)
+	m_str = dt_str.split('/')[0]
+	if m_str[0] == '0':
+		m_str = m_str[1:]
+	d_str  = dt_str.split('/')[1]
+	if d_str[0] == '0':
+		d_str = d_str[1:]
+	dt_str = '/'.join([m_str, d_str, *(dt_str.split('/')[2:])])
+	return dt_str
+"""
+
 def process_missed_payloads():
 	num = total_failed_payloads
 	for i in range(num):
@@ -113,9 +168,22 @@ def process_missed_payloads():
 						converted_dict = ast.literal_eval(str_dict)	## Using ast.literal_eval() to convert dict string to a dict object (an alternative to json.loads())
 						missed_payload.append(converted_dict)
 
+		date = None 
 		print("[process_missed_payloads]\n-->  Payload #{}:".format(i))
 		# print(missed_payload)
 		for entry in missed_payload:
+
+			# date = list(entry.keys())[0]	## Extracts the date string from the entry dict key
+			date = extract_date_from_entry(entry, as_dt_object=True)
+			# print("{} _({})".format(date, type(date)), end="")
+			dt_str = date.strftime("%m/%d/%Y,%I:%M:%S %p")
+			dt_str2 = extract_date_from_entry(entry, as_dt_object=False)
+			print("\ndt_str:  {} _ extracted str:  {}".format(dt_str, dt_str2))
+			print("{} _({}) __[{}]".format(date, type(date), dt_str))
+			print("(date:  {}) _ (time:  {})".format(*dt_str2.split(',')))
+			# date = get_dt_obj_from_entry_time(list(entry.keys())[0])
+			# print("{} _({}) __[{}]".format(date, type(date), date.strftime("%m/%d/%Y,%I:%M:%S %p")))
+
 			print("\t{}".format(entry))
 		update_num_failed_payloads(-1)
 
