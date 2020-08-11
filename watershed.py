@@ -607,7 +607,7 @@ if __name__ == "__main__":
 
 		# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
 		entry_time_obj2 = sheet_manager.datestr_to_datetime(entry_time)
-		print("entry_time_obj == entry_time_obj2 ?:\t{}".format(entry_time_obj==entry_time_obj2))
+		print("entry_time_obj == entry_time_obj2 ?:\t{}\nentry_time_obj:\t{}\nentry_time_obj2:\t{}\n".format(entry_time_obj==entry_time_obj2, entry_time_obj, entry_time_obj2))
 		
 		prev_entry_time_obj = entry_time_obj
 		initial_results_date_check_made = False 
