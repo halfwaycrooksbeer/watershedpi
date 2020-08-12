@@ -346,7 +346,7 @@ class Entry():
 
 			for i in range(len(cell_list)-1):
 				this_cell = cell_list[i]
-				print("\t-->  this_cell.value = '{}'".format(this_cell.value))
+				# print("\t-->  this_cell.value = '{}'".format(this_cell.value))
 				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
 				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
@@ -356,7 +356,7 @@ class Entry():
 
 				if this_date < self.dt_obj:
 					next_cell = cell_list[i+1]
-					print("\t-->  next_cell.value = '{}'".format(next_cell.value))
+					# print("\t-->  next_cell.value = '{}'".format(next_cell.value))
 					# next_date = datestr_to_datetime(next_cell.value)
 					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
@@ -377,13 +377,13 @@ class Entry():
 
 			for i in range(len(cell_list)-1):
 				this_cell = cell_list[i]
-				print("\t-->  this_cell.value = '{}'".format(this_cell.value))
+				# print("\t-->  this_cell.value = '{}'".format(this_cell.value))
 				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
 				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
 				if this_date < self.dt_obj:
 					next_cell = cell_list[i+1]
-					print("\t-->  next_cell.value = '{}'".format(next_cell.value))
+					# print("\t-->  next_cell.value = '{}'".format(next_cell.value))
 					# next_date = datestr_to_datetime(next_cell.value)
 					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
@@ -714,8 +714,8 @@ class SheetManager(metaclass=Singleton):
 			# print("\ndict( {} : {} )".format(ws_title, worksheet_entries_dict[ws_title]))
 
 			# all_rows_consecutive = True
-			row_indices = [e.row for e in worksheet_entries_dict[ws_title]]
-			if all_rows_consecutive(row_indices):
+			row_indices = [e.sheet_row for e in worksheet_entries_dict[ws_title]]
+			if all_rows_consecutive(row_indices) or (len(row_indices) > 0 and (row_indices.count(row_indices[0]) == len(row_indices))):
 				## Perform a batch insertion to the Worksheet if all entry rows are consecutive (can share the same starting row index)
 				print("(all rows consecutive for '{}' Worksheet entries)\n".format(ws_title))
 				insert_at_row = min(row_indices)
@@ -724,17 +724,17 @@ class SheetManager(metaclass=Singleton):
 			else:
 				nonconsec_rows = list()
 				# print("row_indices: {}\nnonconsec_rows: {}\n".format(row_indices, nonconsec_rows))
-				all_entries = sorted(worksheet_entries_dict[ws_title], key=lambda x: x.row)
+				all_entries = sorted(worksheet_entries_dict[ws_title], key=lambda x: x.sheet_row)
 				for i,e in enumerate(all_entries):
 					if e == all_entries[-1]:
 						break
-					if (all_entries[i+1].row - e.row) > 1:
+					if (all_entries[i+1].sheet_row - e.sheet_row) > 1:
 						for ee in all_entries[i+1:]:
 							if ee not in nonconsec_rows:
-								nonconsec_rows.append(ee) ##.row)
-							if ee.row in row_indices:
-								row_indices.remove(ee.row)
-				print("row_indices: {}\nnonconsec_rows: {}\n".format(row_indices, [ee.row for ee in nonconsec_rows]))
+								nonconsec_rows.append(ee) ##.sheet_row)
+							if ee.sheet_row in row_indices:
+								row_indices.remove(ee.sheet_row)
+				print("row_indices: {}\nnonconsec_rows: {}\n".format(row_indices, [ee.sheet_row for ee in nonconsec_rows]))
 
 				grouped_entries = [e for e in worksheet_entries_dict[ws_title] if e not in nonconsec_rows]
 				## Batch insert first largest grouping of consecutive entries
@@ -744,8 +744,8 @@ class SheetManager(metaclass=Singleton):
 
 				for e in nonconsec_rows:
 					## Insert non-consecutive entries individually (WARNING: May incur an APIError for too many requests)
-					e.wksht.insert_rows([e.values], row=e.row, value_input_option=VALUE_INPUT_OPTION)
-					self.center_row(e.row, sheet=e.wksht)
+					e.wksht.insert_rows([e.values], row=e.sheet_row, value_input_option=VALUE_INPUT_OPTION)
+					self.center_row(e.sheet_row, sheet=e.wksht)
 
 			print("[insert_missed_payload] {} rows inserted to worksheet '{}'\n".format(len(worksheet_entries_dict[ws_title]), ws_title))
 
