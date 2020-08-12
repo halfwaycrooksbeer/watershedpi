@@ -715,7 +715,7 @@ class SheetManager(metaclass=Singleton):
 
 			# all_rows_consecutive = True
 			row_indices = [e.sheet_row for e in worksheet_entries_dict[ws_title]]
-			if all_rows_consecutive(row_indices) or (len(row_indices) > 0 and (row_indices.count(row_indices[0]) == len(row_indices))):
+			if all_rows_consecutive(row_indices) or (len(row_indices) > 0 and (row_indices.count(row_indices[0]) == len(row_indices))) or (len(set(row_indices)) < 3):  # == 1):
 				## Perform a batch insertion to the Worksheet if all entry rows are consecutive (can share the same starting row index)
 				print("(all rows consecutive for '{}' Worksheet entries)\n".format(ws_title))
 				insert_at_row = min(row_indices)
