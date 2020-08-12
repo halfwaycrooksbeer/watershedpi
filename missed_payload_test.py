@@ -176,7 +176,7 @@ def process_missed_payloads():
 			# date = list(entry.keys())[0]	## Extracts the date string from the entry dict key
 			date = extract_date_from_entry(entry, as_dt_object=True)
 			# print("{} _({})".format(date, type(date)), end="")
-			dt_str = date.strftime("%m/%d/%Y,%I:%M:%S %p")
+			dt_str = date.strftime("%-m/%-d/%Y,%I:%M:%S %p")
 			dt_str2 = extract_date_from_entry(entry, as_dt_object=False)
 			print("\ndt_str:  {} _ extracted str:  {}".format(dt_str, dt_str2))
 			print("{} _({}) __[{}]".format(date, type(date), dt_str))
