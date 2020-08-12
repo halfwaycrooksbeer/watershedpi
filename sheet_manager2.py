@@ -336,6 +336,8 @@ class Entry():
 	
 	@property
 	def sheet_row(self):
+		first_row_for_day = self.wksht.row_count
+		first_datetime_for_day = None 
 		if self._sheet_row is None or self._sheet_row < 2:
 			## Search current worksheet for correct row position for this entry (according to date-time)
 			date_regex = re.compile(r'\A{}'.format(self.dt_obj.strftime(FULL_DATE_FORMAT)))
@@ -347,6 +349,10 @@ class Entry():
 				print("\t-->  this_cell.value = '{}'".format(this_cell.value))
 				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
 				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+
+				if i == 0:
+					first_row_for_day = this_cell.row 
+					first_datetime_for_day = this_date
 
 				if this_date < self.dt_obj:
 					next_cell = cell_list[i+1]
@@ -387,7 +393,13 @@ class Entry():
 						break
 
 		if self._sheet_row is None or self._sheet_row < 2:
+			self._sheet_row = first_row_for_day
+			self._next_entry = { (first_row_for_day+1) : first_datetime_for_day }
+			print("[Entry.sheet_row]  ERROR: No suitable row found for later than entry date-time '{}'  -->  assigning the Entry date's first row index instead ({})".format(self.dt_str, self._sheet_row))	
+
+		if self._sheet_row is None or self._sheet_row < 2:
 			self._sheet_row = self.wksht.row_count
+			self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=int(MEASUREMENT_INTERVAL*2.5))) }
 			print("[Entry.sheet_row]  ERROR: No suitable row found for entry date-time '{}'  -->  assigning the Worksheet's last row instead ({})".format(self.dt_str, self._sheet_row))	
 		return self._sheet_row
 	
