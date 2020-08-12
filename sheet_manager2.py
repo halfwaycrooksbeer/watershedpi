@@ -208,7 +208,7 @@ def datestr_to_datetime(date_str):
 
 ### UPDATE [ 8/11/2020 ]
 def get_spreadsheet_title_for_datestr(date_str):
-	entry_month = int(date_str.split(',')[0].split('/')[1])
+	entry_month = int(date_str.split(',')[0].split('/')[0])
 	entry_date_range = get_month_range(m=entry_month)
 	entry_sheet_name = NAME_FORMAT.format(entry_date_range)
 	return entry_sheet_name

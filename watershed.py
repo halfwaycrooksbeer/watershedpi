@@ -348,6 +348,7 @@ def setup():
 				## Extrapolate number of missed payloads discovered using the line count of the FAILED_PAYLOADS_FILE
 				num_lines = sum(1 for line in open(FAILED_PAYLOADS_FILE))
 				total_failed_payloads = math.ceil(num_lines / JSON_CAPACITY)
+				update_num_failed_payloads(0)
 				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
 			else:
 				print('[setup] No NUM_PAYLOADS_FILE or FAILED_PAYLOADS_FILE exists yet.')
