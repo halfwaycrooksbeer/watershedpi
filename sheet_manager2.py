@@ -344,14 +344,16 @@ class Entry():
 
 			for i in range(len(cell_list)-1):
 				this_cell = cell_list[i]
+				print("\t-->  this_cell.value = '{}'".format(this_cell.value))
 				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
 				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
 				if this_date < self.dt_obj:
 					next_cell = cell_list[i+1]
+					print("\t-->  next_cell.value = '{}'".format(next_cell.value))
 					# next_date = datestr_to_datetime(next_cell.value)
 					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
-					
+
 					if self.dt_obj < next_date:
 						self._sheet_row = next_cell.row 
 						self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
@@ -362,7 +364,31 @@ class Entry():
 				self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=int(MEASUREMENT_INTERVAL*1.25))) }
 
 		if self._sheet_row is None or self._sheet_row < 2:
-			print("[Entry.sheet_row]  ERROR: No suitable row found for entry date-time '{}'!".format(self.dt_str))	
+			## Search the following day on the current worksheet for correct row position for this entry (according to date-time)
+			date_regex = re.compile(r'\A{}'.format((self.dt_obj + dt.timedelta(days=1)).strftime(FULL_DATE_FORMAT)))
+			cell_list = self.wksht.findall(date_regex, in_column=1)
+			print("[Entry.sheet_row]  Number of cells matching '{}' found:  {}".format(date_regex, len(cell_list)))
+
+			for i in range(len(cell_list)-1):
+				this_cell = cell_list[i]
+				print("\t-->  this_cell.value = '{}'".format(this_cell.value))
+				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
+				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+
+				if this_date < self.dt_obj:
+					next_cell = cell_list[i+1]
+					print("\t-->  next_cell.value = '{}'".format(next_cell.value))
+					# next_date = datestr_to_datetime(next_cell.value)
+					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+
+					if self.dt_obj < next_date:
+						self._sheet_row = next_cell.row 
+						self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
+						break
+
+		if self._sheet_row is None or self._sheet_row < 2:
+			self._sheet_row = self.wksht.row_count
+			print("[Entry.sheet_row]  ERROR: No suitable row found for entry date-time '{}'  -->  assigning the Worksheet's last row instead ({})".format(self.dt_str, self._sheet_row))	
 		return self._sheet_row
 	
 
