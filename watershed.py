@@ -3,6 +3,7 @@ import os
 import sys
 import ast
 import time
+import math
 import urllib
 import requests
 import busio
@@ -314,7 +315,7 @@ def map(x, in_min, in_max, out_min, out_max):
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
 def setup():
-	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads, online
+	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads  #, online
 	if not initialized:
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
@@ -335,13 +336,22 @@ def setup():
 				n = f.read()
 			try:
 				total_failed_payloads = int(n)
+				if total_failed_payloads > 0 and not os.path.isfile(FAILED_PAYLOADS_FILE):
+					update_num_failed_payloads((-1)*total_failed_payloads)
+					print('[setup] No FAILED_PAYLOADS_FILE found.')
 				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
 			except ValueError:
 				print('[setup] ValueError --> NUM_PAYLOADS_FILE read out non-number:  "{}"'.format(total_failed_payloads))
 				total_failed_payloads = 0
 		else:
-			print('[setup] No NUM_PAYLOADS_FILE exists yet.')
-			total_failed_payloads = 0
+			if os.path.isfile(FAILED_PAYLOADS_FILE):
+				## Extrapolate number of missed payloads discovered using the line count of the FAILED_PAYLOADS_FILE
+				num_lines = sum(1 for line in open(FAILED_PAYLOADS_FILE))
+				total_failed_payloads = math.ceil(num_lines / JSON_CAPACITY)
+				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
+			else:
+				print('[setup] No NUM_PAYLOADS_FILE or FAILED_PAYLOADS_FILE exists yet.')
+				total_failed_payloads = 0
 		###
 
 		# online = False
@@ -492,6 +502,9 @@ def cache_payload(list_of_json):
 
 def process_missed_payloads(sm):
 	num = total_failed_payloads
+	if not os.path.isfile(FAILED_PAYLOADS_FILE):
+		update_num_failed_payloads((-1)*num)
+		return
 	for i in range(num):
 		missed_payload = list()
 		start_line = i * JSON_CAPACITY
@@ -569,7 +582,8 @@ if __name__ == "__main__":
 	check_connection()
 	###
 
-	print('Connected.')
+	if online:
+		print('Connected.')
 
 	setup()
 
@@ -609,6 +623,22 @@ if __name__ == "__main__":
 			except KeyboardInterrupt:
 				break
 	else:
+		###############################################################################################################
+		### TODO: Ensure that OFFLINE_MODE can still operate && collect measurement data (cached) from this
+		###       loop's commencement! Currently cannot begin this program without an Internet connection.
+		###       The following instantiation of `SheetManager` && it's resulting CurrentSheet will
+		###       incur the following uncaught/unhandled fatal Exceptions (due specifically to `self.gc.open()` call):
+		###
+		###         - urllib3.exceptions.MaxRetryError  
+		###         - requests.exceptions.ConnectionError 
+		###         - google.auth..exceptions.TransportError  
+		###
+		### Strategy: Refactor all dependencies on the `sm` SheetManager instance within this loop scope such that those
+		###           `sm` operations are only reached when (1) `sm is not None`, and (2) an Internet connection has been
+		###           secured; ensure that no critical calls, checks, or variables are affected, which could lead to 
+		###           errors in the offline flume measurement process loop.
+		###############################################################################################################
+
 		sm = sheet_manager.SheetManager()
 		entry_time_obj = sheet_manager.get_datetime_now()
 		entry_time = getTimestamp(entry_time_obj)
