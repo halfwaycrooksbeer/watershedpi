@@ -354,7 +354,7 @@ class Entry():
 		else:
 			## If a row number was provided at instantiation, create a `next_entry` dict containing superficial data
 			if self._next_entry is None:
-				self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=(MEASUREMENT_INTERVAL+3))) }
+				self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=int(MEASUREMENT_INTERVAL*1.25))) }
 
 		if self._sheet_row is None or self._sheet_row < 2:
 			print("[Entry.sheet_row]  ERROR: No suitable row found for entry date-time '{}'!".format(self.dt_str))	
@@ -584,7 +584,7 @@ class SheetManager(metaclass=Singleton):
 		if entry_sheet_title == self.cur_sheet.sheet.title:
 			entry_sheet = self.cur_sheet.sheet
 		else:
-			print(" >> Entry '{}' using different Spreadsheet than SheetManager.cur_sheet:  '{}'".format(entry_datestr, entry_sheet_title))
+			print(" >> Entry '{}' using different Spreadsheet than SheetManager.cur_sheet ('{}'):  '{}'".format(entry_datestr, self.cur_sheet.sheet.title, entry_sheet_title))
 			try:
 				entry_sheet = self.gc.open(entry_sheet_title)
 			except gspread.exceptions.SpreadsheetNotFound:
