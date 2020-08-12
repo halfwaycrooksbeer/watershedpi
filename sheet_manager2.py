@@ -683,13 +683,13 @@ class SheetManager(metaclass=Singleton):
 					## Convert entry datetime string to a datetime object for comparison against the previous entry's replaced row (`next_entry`)
 					entry_dt_obj = dt.datetime.strptime(entry_datestr.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
-					if prev_entry.dt_obj < dict_entry.dt_obj:
+					if prev_entry.dt_obj < entry_dt_obj:
 						## Because the prev_entry and this entry belong to the same Spreadsheet && Worksheet, 
 						## this entry's insertion row can be determined using the prev_entry's replaced row index
 						prevs_next_entry = prev_entry.next_entry  ## Should be a dict of form:  { next_row_number : next_row_datetime_obj }
 						prevs_next_entry_row = int(list(prevs_next_entry.keys())[0])
 
-						if dict_entry.dt_obj < prevs_next_entry[prevs_next_entry_row]:
+						if entry_dt_obj < prevs_next_entry[prevs_next_entry_row]:
 							row_idx = prevs_next_entry_row 	## Should be equivalent to (prev_entry.row + 1)
 							# prev_entry.next_entry = { prevs_next_entry_row+1 : prevs_next_entry[prevs_next_entry_row] }
 							# consecutive_rows = False
