@@ -370,6 +370,21 @@ class Entry():
 							self._sheet_row = next_cell.row 
 							self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
 							break
+
+				### UPDATED 8/28/20
+				if self._sheet_row is None or self._sheet_row < 2:
+					## Entries were found for this date, but all were earlier than this datetime
+					if first_datetime_for_day is not None and first_datetime_for_day != self.dt_obj:  
+						## Latest entry will still be in 'next_cell'
+						self._sheet_row = next_cell.row + 1
+						try:
+							following_cell = self.wksht.cell(self._sheet_row, 1)
+							self._next_entry = { (self._sheet_row+1) : dt.datetime.strptime(following_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-','')) }
+						except:
+							## No cell exists at this row, thus we're at the end of the worksheet
+							self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=int(MEASUREMENT_INTERVAL*1.25))) }
+				###
+
 		else:
 			## If a row number was provided at instantiation, create a `next_entry` dict containing superficial data
 			if self._next_entry is None:
@@ -377,6 +392,7 @@ class Entry():
 
 
 		# if first_datetime_for_day is not None and first_datetime_for_day == self.dt_obj: 	## No entries were found for this date...
+
 
 
 		if self._sheet_row is None or self._sheet_row < 2:
@@ -404,6 +420,7 @@ class Entry():
 								break
 
 		## TODO: Handle edge case: what if no entries found for this date or the following date? Should the entire month be scanned (perhaps w/ binary search)?
+		# if first_datetime_for_day
 
 		if self._sheet_row is None or self._sheet_row < 2:
 			# if first_row_for_day < 2:
