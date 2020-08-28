@@ -541,10 +541,11 @@ def process_missed_payloads(sm):
 				else:
 					print("[process_missed_payloads]  INSERTION FAILED FOR PAYLOAD #{}!".format(i))
 			except Exception as e:
-				exc_name = e.__class__.__name__
-				exc_desc = str(e)
-				exc_lineno = e.exc_info()[2].tb_lineno
-				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+				# exc_name = e.__class__.__name__
+				# exc_desc = str(e)
+				# exc_lineno = e.exc_info()[2].tb_lineno
+				# exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+				exc_string = '{}:  "{}"'.format(e.__class__.__name__, str(e))
 				print("[process_missed_payloads]  INSERTION INCURRED AN EXCEPTION FOR PAYLOAD #{}!\n  -->  {}\n".format(i, exc_string))
 		else:
 			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
