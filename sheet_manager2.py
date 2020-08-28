@@ -340,8 +340,8 @@ class Entry():
 	@property
 	def sheet_row(self):
 		first_row_for_day = self.wksht.row_count
-		if first_row_for_day < 2:
-			first_row_for_day = 2
+		# if first_row_for_day < 2:
+		# 	first_row_for_day = 2
 		first_datetime_for_day = None 
 		if self._sheet_row is None or self._sheet_row < 2:
 			## Search current worksheet for correct row position for this entry (according to date-time)
@@ -398,6 +398,10 @@ class Entry():
 						break
 
 		if self._sheet_row is None or self._sheet_row < 2:
+			# if first_row_for_day < 2:
+			# 	first_row_for_day += 1
+			if first_row_for_day == 0:
+				first_row_for_day = 1
 			self._sheet_row = first_row_for_day
 			self._next_entry = { (first_row_for_day+1) : first_datetime_for_day }
 			print("[Entry.sheet_row]  ERROR: No suitable row found for later than entry date-time '{}'  -->  assigning the Entry date's first row index instead ({})".format(self.dt_str, self._sheet_row))	
@@ -724,7 +728,12 @@ class SheetManager(metaclass=Singleton):
 				## Perform a batch insertion to the Worksheet if all entry rows are consecutive (can share the same starting row index)
 				print("(all rows consecutive for '{}' Worksheet entries)\n".format(ws_title))
 				insert_at_row = min(row_indices)
-				ws.insert_rows([e.values for e in worksheet_entries_dict[ws_title]], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
+				if insert_at_row == 1:
+					## If first entries for this month, cannot insert before the column headers in row 1; thus, append after row 1
+					ws.append_rows([e.values for e in worksheet_entries_dict[ws_title]], value_input_option=VALUE_INPUT_OPTION, 
+									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+				else:
+					ws.insert_rows([e.values for e in worksheet_entries_dict[ws_title]], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 				self.center_rows(insert_at_row, end_row=max(row_indices), sheet=ws)
 			else:
 				nonconsec_rows = list()
@@ -744,12 +753,21 @@ class SheetManager(metaclass=Singleton):
 				grouped_entries = [e for e in worksheet_entries_dict[ws_title] if e not in nonconsec_rows]
 				## Batch insert first largest grouping of consecutive entries
 				insert_at_row = min(row_indices)
-				ws.insert_rows([e.values for e in grouped_entries], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
+				if insert_at_row == 1:
+					## If first entries for this month, cannot insert before the column headers in row 1; thus, append after row 1
+					ws.append_rows([e.values for e in grouped_entries], value_input_option=VALUE_INPUT_OPTION, 
+									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+				else:
+					ws.insert_rows([e.values for e in grouped_entries], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 				self.center_rows(insert_at_row, end_row=(insert_at_row+len(grouped_entries)), sheet=ws)
 
 				for e in nonconsec_rows:
 					## Insert non-consecutive entries individually (WARNING: May incur an APIError for too many requests)
-					e.wksht.insert_rows([e.values], row=e.sheet_row, value_input_option=VALUE_INPUT_OPTION)
+					if e.sheet_row == 1:
+						e.wksht.append_rows([e.values], value_input_option=VALUE_INPUT_OPTION, 
+									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+					else:
+						e.wksht.insert_rows([e.values], row=e.sheet_row, value_input_option=VALUE_INPUT_OPTION)
 					self.center_row(e.sheet_row, sheet=e.wksht)
 
 			print("[insert_missed_payload] {} rows inserted to worksheet '{}'\n".format(len(worksheet_entries_dict[ws_title]), ws_title))
