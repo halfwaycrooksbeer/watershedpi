@@ -339,6 +339,11 @@ def setup():
 				if total_failed_payloads > 0 and not os.path.isfile(FAILED_PAYLOADS_FILE):
 					update_num_failed_payloads((-1)*total_failed_payloads)
 					print('[setup] No FAILED_PAYLOADS_FILE found.')
+				elif total_failed_payloads == 0 and os.path.isfile(FAILED_PAYLOADS_FILE):
+					## Extrapolate number of missed payloads discovered using the line count of the FAILED_PAYLOADS_FILE
+					num_lines = sum(1 for line in open(FAILED_PAYLOADS_FILE))
+					total_failed_payloads = math.ceil(num_lines / JSON_CAPACITY)
+					update_num_failed_payloads(0)
 				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
 			except ValueError:
 				print('[setup] ValueError --> NUM_PAYLOADS_FILE read out non-number:  "{}"'.format(total_failed_payloads))
