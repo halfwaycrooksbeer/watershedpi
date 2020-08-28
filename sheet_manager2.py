@@ -740,6 +740,11 @@ class SheetManager(metaclass=Singleton):
 					## If first entries for this month, cannot insert before the column headers in row 1; thus, append after row 1
 					ws.append_rows([e.values for e in worksheet_entries_dict[ws_title]], value_input_option=VALUE_INPUT_OPTION, 
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+				
+				## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
+				elif insert_at_row == ws.row_count:
+					ws.append_rows([e.values for e in worksheet_entries_dict[ws_title]], value_input_option=VALUE_INPUT_OPTION)
+
 				else:
 					ws.insert_rows([e.values for e in worksheet_entries_dict[ws_title]], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 				self.center_rows(insert_at_row, end_row=max(row_indices), sheet=ws)
@@ -765,6 +770,11 @@ class SheetManager(metaclass=Singleton):
 					## If first entries for this month, cannot insert before the column headers in row 1; thus, append after row 1
 					ws.append_rows([e.values for e in grouped_entries], value_input_option=VALUE_INPUT_OPTION, 
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+
+				## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
+				elif insert_at_row == ws.row_count:
+					ws.append_rows([e.values for e in grouped_entries], value_input_option=VALUE_INPUT_OPTION)
+
 				else:
 					ws.insert_rows([e.values for e in grouped_entries], row=insert_at_row, value_input_option=VALUE_INPUT_OPTION)
 				self.center_rows(insert_at_row, end_row=(insert_at_row+len(grouped_entries)), sheet=ws)
@@ -774,6 +784,11 @@ class SheetManager(metaclass=Singleton):
 					if e.sheet_row == 1:
 						e.wksht.append_rows([e.values], value_input_option=VALUE_INPUT_OPTION, 
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
+
+					## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
+					elif e.sheet_row == e.wksht.row_count:
+						e.wksht.append_rows([e.values], value_input_option=VALUE_INPUT_OPTION)
+
 					else:
 						e.wksht.insert_rows([e.values], row=e.sheet_row, value_input_option=VALUE_INPUT_OPTION)
 					self.center_row(e.sheet_row, sheet=e.wksht)
