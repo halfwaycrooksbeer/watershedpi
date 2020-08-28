@@ -340,8 +340,6 @@ class Entry():
 	@property
 	def sheet_row(self):
 		first_row_for_day = self.wksht.row_count
-		# if first_row_for_day < 2:
-		# 	first_row_for_day = 2
 		first_datetime_for_day = None 
 		if self._sheet_row is None or self._sheet_row < 2:
 			## Search current worksheet for correct row position for this entry (according to date-time)
@@ -349,30 +347,37 @@ class Entry():
 			cell_list = self.wksht.findall(date_regex, in_column=1)
 			print("[Entry.sheet_row]  Number of cells matching '{}' found:  {}".format(date_regex, len(cell_list)))
 
-			for i in range(len(cell_list)-1):
-				this_cell = cell_list[i]
-				# print("\t-->  this_cell.value = '{}'".format(this_cell.value))
-				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
-				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+			if len(cell_list) == 0:
+				first_datetime_for_day = self.dt_obj 
+			else:
+				for i in range(len(cell_list)-1):
+					this_cell = cell_list[i]
+					# print("\t-->  this_cell.value = '{}'".format(this_cell.value))
+					# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
+					this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
-				if i == 0:
-					first_row_for_day = this_cell.row 
-					first_datetime_for_day = this_date
+					if i == 0:
+						first_row_for_day = this_cell.row 
+						first_datetime_for_day = this_date
 
-				if this_date < self.dt_obj:
-					next_cell = cell_list[i+1]
-					# print("\t-->  next_cell.value = '{}'".format(next_cell.value))
-					# next_date = datestr_to_datetime(next_cell.value)
-					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+					if this_date < self.dt_obj:
+						next_cell = cell_list[i+1]
+						# print("\t-->  next_cell.value = '{}'".format(next_cell.value))
+						# next_date = datestr_to_datetime(next_cell.value)
+						next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
-					if self.dt_obj < next_date:
-						self._sheet_row = next_cell.row 
-						self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
-						break
+						if self.dt_obj < next_date:
+							self._sheet_row = next_cell.row 
+							self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
+							break
 		else:
 			## If a row number was provided at instantiation, create a `next_entry` dict containing superficial data
 			if self._next_entry is None:
 				self._next_entry = { (self._sheet_row+1) : (self.dt_obj + dt.timedelta(seconds=int(MEASUREMENT_INTERVAL*1.25))) }
+
+
+		# if first_datetime_for_day is not None and first_datetime_for_day == self.dt_obj: 	## No entries were found for this date...
+
 
 		if self._sheet_row is None or self._sheet_row < 2:
 			## Search the following day on the current worksheet for correct row position for this entry (according to date-time)
@@ -380,22 +385,25 @@ class Entry():
 			cell_list = self.wksht.findall(date_regex, in_column=1)
 			print("[Entry.sheet_row]  Number of cells matching '{}' found:  {}".format(date_regex, len(cell_list)))
 
-			for i in range(len(cell_list)-1):
-				this_cell = cell_list[i]
-				# print("\t-->  this_cell.value = '{}'".format(this_cell.value))
-				# this_date = datestr_to_datetime(this_cell.value)  ## e.g., "10/3/2020, 09:41:23 PM"
-				this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+			if len(cell_list) > 0:
+				if first_datetime_for_day is not None and first_datetime_for_day == self.dt_obj: 	## No entries were found for this date... insert at first row of next date
+					self._sheet_row = cell_list[0].row 
+					self._next_entry = { (cell_list[0].row+1) : dt.datetime.strptime(cell_list[0].value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-','')) }
+				else:
+					for i in range(len(cell_list)-1):
+						this_cell = cell_list[i]
+						this_date = dt.datetime.strptime(this_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
-				if this_date < self.dt_obj:
-					next_cell = cell_list[i+1]
-					# print("\t-->  next_cell.value = '{}'".format(next_cell.value))
-					# next_date = datestr_to_datetime(next_cell.value)
-					next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
+						if this_date < self.dt_obj:
+							next_cell = cell_list[i+1]
+							next_date = dt.datetime.strptime(next_cell.value.replace(', ',','), ENTRY_TIME_FORMAT.replace('-',''))
 
-					if self.dt_obj < next_date:
-						self._sheet_row = next_cell.row 
-						self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
-						break
+							if self.dt_obj < next_date:
+								self._sheet_row = next_cell.row 
+								self._next_entry = { (next_cell.row+1) : next_date } 	## Inserting this Entry will bump previous value down 1 row
+								break
+
+		## TODO: Handle edge case: what if no entries found for this date or the following date? Should the entire month be scanned (perhaps w/ binary search)?
 
 		if self._sheet_row is None or self._sheet_row < 2:
 			# if first_row_for_day < 2:
