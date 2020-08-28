@@ -198,10 +198,13 @@ def datestr_to_datetime(date_str):
 	mn = int(mn)
 	sc, ampm = scampm.split(' ')
 	sc = int(sc)
-	# if ampm == 'PM':
-		# hr += 12
-	if ampm == 'AM':
-		hr -= 12
+	if ampm == 'PM':
+		if hr != 12:
+			hr += 12
+	elif ampm == 'AM':
+		if hr == 12:
+			hr = 0
+	hr %= 24
 	dt_obj = dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
 	return dt_obj
 ###
