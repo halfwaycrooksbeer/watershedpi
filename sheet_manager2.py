@@ -759,7 +759,7 @@ class SheetManager(metaclass=Singleton):
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
 				
 				## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
-				elif insert_at_row == ws.row_count:
+				elif insert_at_row >= ws.row_count:
 					ws.append_rows([e.values for e in worksheet_entries_dict[ws_title]], value_input_option=VALUE_INPUT_OPTION)
 
 				else:
@@ -789,7 +789,7 @@ class SheetManager(metaclass=Singleton):
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
 
 				## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
-				elif insert_at_row == ws.row_count:
+				elif insert_at_row >= ws.row_count:
 					ws.append_rows([e.values for e in grouped_entries], value_input_option=VALUE_INPUT_OPTION)
 
 				else:
@@ -803,7 +803,7 @@ class SheetManager(metaclass=Singleton):
 									insert_data_option="INSERT_ROWS", table_range="A1:C1")
 
 					## TODO: Also check if row is the very last of the worksheet's! In that case, append to the end!
-					elif e.sheet_row == e.wksht.row_count:
+					elif e.sheet_row >= e.wksht.row_count:
 						e.wksht.append_rows([e.values], value_input_option=VALUE_INPUT_OPTION)
 
 					else:
