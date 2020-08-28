@@ -340,6 +340,8 @@ class Entry():
 	@property
 	def sheet_row(self):
 		first_row_for_day = self.wksht.row_count
+		if first_row_for_day < 2:
+			first_row_for_day = 2
 		first_datetime_for_day = None 
 		if self._sheet_row is None or self._sheet_row < 2:
 			## Search current worksheet for correct row position for this entry (according to date-time)
@@ -692,7 +694,7 @@ class SheetManager(metaclass=Singleton):
 						prevs_next_entry = prev_entry.next_entry  ## Should be a dict of form:  { next_row_number : next_row_datetime_obj }
 						prevs_next_entry_row = int(list(prevs_next_entry.keys())[0])
 
-						if entry_dt_obj < prevs_next_entry[prevs_next_entry_row]:
+						if prevs_next_entry[prevs_next_entry_row] is not None and entry_dt_obj < prevs_next_entry[prevs_next_entry_row]:
 							row_idx = prevs_next_entry_row 	## Should be equivalent to (prev_entry.row + 1)
 							# prev_entry.next_entry = { prevs_next_entry_row+1 : prevs_next_entry[prevs_next_entry_row] }
 							# consecutive_rows = False
