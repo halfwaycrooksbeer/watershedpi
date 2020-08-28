@@ -547,6 +547,7 @@ def process_missed_payloads(sm):
 				# exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
 				exc_string = '{}:  "{}"'.format(e.__class__.__name__, str(e))
 				print("[process_missed_payloads]  INSERTION INCURRED AN EXCEPTION FOR PAYLOAD #{}!\n  -->  {}\n".format(i, exc_string))
+				traceback.print_exc(file=sys.stdout)
 		else:
 			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
 
