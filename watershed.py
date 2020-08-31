@@ -74,7 +74,7 @@ ZERO = 5
 WARNING = 6
 
 ## Program values
-INTERVAL = 15 if not ON_DEV_BRANCH else 3 	## seconds
+INTERVAL = 15  #if not ON_DEV_BRANCH else 3 	## seconds
 JSON_CAPACITY = 20
 NSAMPLES = 8
 SPIKE_THRESH = 0.14		## perhaps try 0.25 && 0.5 as well...
