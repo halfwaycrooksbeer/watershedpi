@@ -1,19 +1,27 @@
 #!/usr/bin/python3
 import os
 import sys
+import ast
 import time
+import math
 import urllib
 import requests
 import busio
 import board
 import random
+import itertools
 import traceback
 import statistics
 import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
-import sheet_manager
 
+
+# ON_DEV_BRANCH = True 
+# if not ON_DEV_BRANCH:
+import sheet_manager
+# else:
+	# import sheet_manager2 as sheet_manager
 
 ###############################################################################
 ## CONSTANTS
@@ -24,6 +32,17 @@ UPDATE_BASHRC = False #True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
 USE_GAS = False 
 
+### UPDATE [ 8/7/2020 ]
+import json
+CHECK_NETWORK_EACH_ITERATION = False
+PERSIST_OFFLINE = True
+FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.txt")
+NUM_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "num_payloads.txt")
+MAX_FAILED_PAYLOADS = 20
+total_failed_payloads = 0
+online = False 
+# offline = True
+###
 ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
 DEBUG = True
@@ -55,7 +74,7 @@ ZERO = 5
 WARNING = 6
 
 ## Program values
-INTERVAL = 15 	## seconds
+INTERVAL = 15 if not ON_DEV_BRANCH else 3 	## seconds
 JSON_CAPACITY = 20
 NSAMPLES = 8
 SPIKE_THRESH = 0.14		## perhaps try 0.25 && 0.5 as well...
@@ -296,7 +315,7 @@ def map(x, in_min, in_max, out_min, out_max):
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
 def setup():
-	global initialized, i2c, adc, l_sensor, p_sensor, data
+	global initialized, i2c, adc, l_sensor, p_sensor, data, total_failed_payloads  #, online
 	if not initialized:
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
@@ -310,18 +329,53 @@ def setup():
 		if l_sensor is None:
 			l_sensor = LevelSensor(ads=adc)
 		data = dict()
+
+		### UPDATE [ 8/7/2020 ]
+		if os.path.isfile(NUM_PAYLOADS_FILE):
+			with open(NUM_PAYLOADS_FILE) as f:
+				n = f.read()
+			try:
+				total_failed_payloads = int(n)
+				if total_failed_payloads > 0 and not os.path.isfile(FAILED_PAYLOADS_FILE):
+					update_num_failed_payloads((-1)*total_failed_payloads)
+					print('[setup] No FAILED_PAYLOADS_FILE found.')
+				elif total_failed_payloads == 0 and os.path.isfile(FAILED_PAYLOADS_FILE):
+					## Extrapolate number of missed payloads discovered using the line count of the FAILED_PAYLOADS_FILE
+					num_lines = sum(1 for line in open(FAILED_PAYLOADS_FILE))
+					total_failed_payloads = math.ceil(num_lines / JSON_CAPACITY)
+					update_num_failed_payloads(0)
+				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
+			except ValueError:
+				print('[setup] ValueError --> NUM_PAYLOADS_FILE read out non-number:  "{}"'.format(total_failed_payloads))
+				total_failed_payloads = 0
+		else:
+			if os.path.isfile(FAILED_PAYLOADS_FILE):
+				## Extrapolate number of missed payloads discovered using the line count of the FAILED_PAYLOADS_FILE
+				num_lines = sum(1 for line in open(FAILED_PAYLOADS_FILE))
+				total_failed_payloads = math.ceil(num_lines / JSON_CAPACITY)
+				update_num_failed_payloads(0)
+				print('[setup] Discovered {} missed payloads to be delivered.'.format(total_failed_payloads))
+			else:
+				print('[setup] No NUM_PAYLOADS_FILE or FAILED_PAYLOADS_FILE exists yet.')
+				total_failed_payloads = 0
+		###
+
+		# online = False
 		initialized = True
 
 def network_connected():
+	global online
 	test_url = "http://www.github.com"  # "http://www.google.com"
 	try:
 		urllib.request.urlopen(test_url).close()
 	except Exception as e:
 		if PRINTS_ON:
 			print("[network_connected] Exception: " + str(e))
-		return False
+		online = False
+		return online
 	else:
-		return True
+		online = True
+		return online
 
 def parseflume_state():
 	global flume_state_str
@@ -385,10 +439,11 @@ def get_tomorrow(today=None):
 	tomorrow = today + one_day
 	return tomorrow
 
-def get_dt_obj_from_entry_time(et=entry_time):
+def get_dt_obj_from_entry_time(et=entry_time):	## NOT using this function as of 8/10/2020
 	if et is None:
 		return sheet_manager.get_datetime_now()
-	entry_time_date, entry_time_time = entry_time.split(',')
+	# entry_time_date, entry_time_time = entry_time.split(',')
+	entry_time_date, entry_time_time = et.split(',')
 	m, d, y = entry_time_date.split('/')
 	hr, mn, scampm = entry_time_time.split(':')
 	hr = int(hr)-1
@@ -399,26 +454,119 @@ def get_dt_obj_from_entry_time(et=entry_time):
 		hr += 12
 	return dt.datetime(int(y), int(m), int(d), hour=hr, minute=mn, second=sc)
 
-### UPDATE [ 8/3/2020 ]
+### UPDATE [ 8/7/2020 ]
 def check_connection():
+	# global offline
 	tries = 0
 	while not network_connected():
 		print('Not connected ...')
 		tries += 1
 		if (tries > MAX_RETRIES):
 			print("[ERROR] Could not connect to network!")
+			# offline = True
 
-			with open(ERROR_LOGFILE, 'a') as f:
-				f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], "Could not connect to network at program start!\n"))
+			if not PERSIST_OFFLINE:
+				with open(ERROR_LOGFILE, 'a') as f:
+					f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), __file__, "Network failure\n"))
+				print("\n'{}' terminating  -->  initiating system reboot\n".format(__file__))
+				time.sleep(1)
+				os.system("sudo reboot")
 
-			print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
-			time.sleep(1)
-			os.system("sudo reboot")
+				sys.exit(1)
+			else:
+				with open(ERROR_LOGFILE, 'a') as f:
+					# f.write('\n[ {} ]\t--> "{}" experienced a network failure (#{}); caching missed payload now to "{}"\n'.format(getTimestamp(), __file__, total_failed_payloads, FAILED_PAYLOADS_FILE))
+					f.write('\n[ {} ]\t--> "{}" experienced a network failure ... \n'.format(getTimestamp(), __file__))
+				return False
 
-			sys.exit(1)
-			
 		time.sleep(3)
+	# offline = False
+	return True
 ###
+
+### UPDATE [ 8/7/2020 ]
+def update_num_failed_payloads(diff=0):
+	global total_failed_payloads
+	total_failed_payloads += diff 
+	if total_failed_payloads < 0:
+		total_failed_payloads = 0
+	with open(NUM_PAYLOADS_FILE, 'w') as f:
+		f.write(str(total_failed_payloads))
+
+
+def cache_payload(list_of_json):
+	update_num_failed_payloads(1)
+	failure_msg = '\n[ {} ]\t>>>\t (#{}) Now caching missed payload to "{}"\n'.format(getTimestamp(), total_failed_payloads, FAILED_PAYLOADS_FILE)
+	print(failure_msg)
+	with open(ERROR_LOGFILE, 'a') as f:
+		f.write(failure_msg)
+	with open(FAILED_PAYLOADS_FILE, 'a') as j:
+		for entry in list_of_json:
+			# json.dump(entry, j)
+			j.write(str(entry).replace("'",'"')+'\n')
+
+
+def process_missed_payloads(sm):
+	num = total_failed_payloads
+	if not os.path.isfile(FAILED_PAYLOADS_FILE):
+		update_num_failed_payloads((-1)*num)
+		return
+	for i in range(num):
+		missed_payload = list()
+		start_line = i * JSON_CAPACITY
+		stop_line = start_line + JSON_CAPACITY
+
+		with open(FAILED_PAYLOADS_FILE) as f:
+			## Syntax:  itertools.islice(iterable, start, stop, step)
+			for line in itertools.islice(f, start_line, stop_line, 1):	## Skip already processed entries
+				line = line.replace("}}", "}},")
+				for str_dict in line.split('},'): 
+					if len(str_dict) > 1:
+						str_dict = str(str_dict).replace("'",'"') + '}'
+						# converted_dict = json.loads(str_dict)
+						converted_dict = ast.literal_eval(str_dict)	## Using ast.literal_eval() to convert dict string to a dict object (an alternative to json.loads())
+						missed_payload.append(converted_dict)
+
+		print("[process_missed_payloads]\n-->  Payload #{}:".format(i))
+		# print(missed_payload)
+		for entry in missed_payload:
+			print("\t{}".format(entry))
+
+		if check_connection():
+			# sm.append_data(missed_payload, missed_payload=True)
+			try:
+				success = sm.insert_missed_payload(missed_payload)
+				if success:
+					update_num_failed_payloads(-1)
+				else:
+					print("[process_missed_payloads]  INSERTION FAILED FOR PAYLOAD #{}!".format(i))
+			except Exception as e:
+				# exc_name = e.__class__.__name__
+				# exc_desc = str(e)
+				# exc_lineno = e.exc_info()[2].tb_lineno
+				# exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+				exc_string = '{}:  "{}"'.format(e.__class__.__name__, str(e))
+				print("[process_missed_payloads]  INSERTION INCURRED AN EXCEPTION FOR PAYLOAD #{}!\n  -->  {}\n".format(i, exc_string))
+				traceback.print_exc(file=sys.stdout)
+				print('-----------------------------\n')
+		else:
+			print("[process_missed_payloads]  NETWORK ERROR: Payload #{} failed to be appended to the Sheet".format(i))
+
+	if total_failed_payloads == 0 and os.path.isfile(FAILED_PAYLOADS_FILE):
+		completion_msg = "[{}] process_missed_payloads():  All {} missing payloads have been processed; removing FAILED_PAYLOADS_FILE: '{}'".format(getTimestamp(), num, FAILED_PAYLOADS_FILE)
+		print(completion_msg)
+		os.system("rm {}".format(FAILED_PAYLOADS_FILE))
+		with open(ERROR_LOGFILE, 'a') as f:
+			f.write(completion_msg)
+
+###
+
+
+class MaxFailedPayloadsError(Exception):
+	def __init__(self, message="Limit has been reached for missed payloads -- system reboot required"):
+		self.message = message
+		super().__init__(self.message)
+
 
 ###############################################################################
 ## LAUNCHER
@@ -435,7 +583,8 @@ if __name__ == "__main__":
 				if "watershedpi.git" in line:
 					replace_bashrc = False
 		
-		os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
+		if os.path.isfile(os.path.join(os.environ['HOME'], 'watershedpi', '.bashrc')):
+			os.system('mv /home/pi/watershedpi/.bashrc /home/pi/')
 		if replace_bashrc:
 			# print('[watershed] Replacing ~/.bashrc to use new launcher script')
 			os.system('echo "[ $(ansi --green --bold .bashrc updated!) ]"')
@@ -446,7 +595,8 @@ if __name__ == "__main__":
 	check_connection()
 	###
 
-	print('Connected.')
+	if online:
+		print('Connected.')
 
 	setup()
 
@@ -486,10 +636,32 @@ if __name__ == "__main__":
 			except KeyboardInterrupt:
 				break
 	else:
+		###############################################################################################################
+		### TODO: Ensure that OFFLINE_MODE can still operate && collect measurement data (cached) from this
+		###       loop's commencement! Currently cannot begin this program without an Internet connection.
+		###       The following instantiation of `SheetManager` && it's resulting CurrentSheet will
+		###       incur the following uncaught/unhandled fatal Exceptions (due specifically to `self.gc.open()` call):
+		###
+		###         - urllib3.exceptions.MaxRetryError  
+		###         - requests.exceptions.ConnectionError 
+		###         - google.auth..exceptions.TransportError  
+		###
+		### Strategy: Refactor all dependencies on the `sm` SheetManager instance within this loop scope such that those
+		###           `sm` operations are only reached when (1) `sm is not None`, and (2) an Internet connection has been
+		###           secured; ensure that no critical calls, checks, or variables are affected, which could lead to 
+		###           errors in the offline flume measurement process loop.
+		###############################################################################################################
+
 		sm = sheet_manager.SheetManager()
-		entry_time = getTimestamp()
-		entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
-		prev_entry_time_obj = entry_time_obj
+		entry_time_obj = sheet_manager.get_datetime_now()
+		entry_time = getTimestamp(entry_time_obj)
+
+		# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time) #(et=None)
+		# entry_time_obj2 = sheet_manager.datestr_to_datetime(entry_time)
+		# print("entry_time_obj == entry_time_obj2 ?:\t{}\nentry_time_obj:\t{}\nentry_time_obj2:\t{}\n".format(entry_time_obj==entry_time_obj2, entry_time_obj, entry_time_obj2))
+		
+		# prev_entry_time_obj = entry_time_obj
+		prev_entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 		initial_results_date_check_made = False 
 
 		try:
@@ -512,6 +684,11 @@ if __name__ == "__main__":
 
 		while True:
 			try:
+				### UPDATED [ 8/7/2020 ]
+				if online and total_failed_payloads > 0:
+					process_missed_payloads(sm)
+				###
+
 				payload = list()
 				updates = 0
 				loop_cnt = 0
@@ -520,7 +697,8 @@ if __name__ == "__main__":
 				while updates < JSON_CAPACITY and not end_date_reached:
 
 					### UPDATE [ 8/3/2020 ]
-					check_connection()
+					if CHECK_NETWORK_EACH_ITERATION:  #  or not online:
+						check_connection()
 					## 	NOTE: If network failure occurs, any measurements since the last successful sheet_manager update 
 					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
 					###
@@ -529,7 +707,8 @@ if __name__ == "__main__":
 						entry_time = getTimestamp()	
 
 						## Detect change in day (roll-over) for computing daily flow results
-						entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						# entry_time_obj = get_dt_obj_from_entry_time(et=entry_time)
+						entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
 
@@ -586,7 +765,19 @@ if __name__ == "__main__":
 						level = round(l_sensor.level, 3)
 
 				if not DRY_RUN:
-					sm.append_data(payload)
+					### UPDATE [ 8/7/2020 ]
+					if not CHECK_NETWORK_EACH_ITERATION:
+						if check_connection():
+							sm.append_data(payload)
+						elif PERSIST_OFFLINE:
+							## Cache the failed payload
+							cache_payload(payload)
+							if total_failed_payloads >= MAX_FAILED_PAYLOADS:
+								needs_reboot = True
+								raise MaxFailedPayloadsError()
+					else:
+						sm.append_data(payload)
+					###
 
 				if end_of_day_reached:
 					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
@@ -613,17 +804,28 @@ if __name__ == "__main__":
 				exc_lineno = sys.exc_info()[2].tb_lineno
 				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
 
-				if exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string):
-					needs_reboot = True
+				### UPDATE [ 8/7/2020 ]
+				was_network_error = exc_name == "TransportError" or ("HTTPS" in exc_desc) or ("ConnectionError" in exc_string)
+				if was_network_error or exc_name == "MaxFailedPayloadsError":
+					if not PERSIST_OFFLINE:
+						needs_reboot = True
+						break
+					elif CHECK_NETWORK_EACH_ITERATION:
+						# total_failed_payloads += 1
+						cache_payload(payload)
+						if total_failed_payloads >= MAX_FAILED_PAYLOADS:
+							needs_reboot = True
+							break
+				###
 				elif exc_name == "KeyboardInterrupt":
 					os.system("sudo pkill check_ps.sh")
-
-				break
+					break
+				
 
 	with open(ERROR_LOGFILE, 'a') as f:
-		f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), sys.argv[0], exc_string))
+		f.write('\n[ {} ]\t--> "{}" exited the program loop\n\t>>> Cause:\t{}'.format(getTimestamp(), __file__, exc_string))
 
 	if needs_reboot:
-		print("\n'{}' terminating  -->  initiating system reboot\n".format(sys.argv[0]))
+		print("\n'{}' terminating  -->  initiating system reboot\n".format(__file__))
 		time.sleep(1)
 		os.system("sudo reboot")
