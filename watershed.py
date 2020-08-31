@@ -17,11 +17,11 @@ import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
 
 
-ON_DEV_BRANCH = True 
-if not ON_DEV_BRANCH:
-	import sheet_manager
-else:
-	import sheet_manager2 as sheet_manager
+# ON_DEV_BRANCH = True 
+# if not ON_DEV_BRANCH:
+import sheet_manager
+# else:
+	# import sheet_manager2 as sheet_manager
 
 ###############################################################################
 ## CONSTANTS
