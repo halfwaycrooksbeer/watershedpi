@@ -683,6 +683,21 @@ if __name__ == "__main__":
 			print("\t|  LAST RESULTS FOUND FOR {}  |\n".format(last_published_date))
 
 		while True:
+			### UPDATED [ 9/1/2020 ]
+			try:
+				if os.stat(ERROR_LOGFILE).st_size > 30000:
+					os.system('cat /dev/null > {}'.format(ERROR_LOGFILE))
+					with open(ERROR_LOGFILE, 'a') as f:
+						f.write('[ {} ]\t--> {} contents wiped after exceeding 30kB\n'.format(getTimestamp(), ERROR_LOGFILE))
+			except (OSError, FileNotFoundError) as exc:
+				exc_name = exc.__class__.__name__
+				exc_desc = str(exc)
+				exc_lineno = sys.exc_info()[2].tb_lineno
+				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+				with open(ERROR_LOGFILE, 'a') as f:
+					f.write('[ {} ]\t--> Operations regarding the ERROR_LOGFILE incurred an exception:\n\t{}\n'.format(getTimestamp(), exc_string))
+			###
+
 			try:
 				### UPDATED [ 8/7/2020 ]
 				if online and total_failed_payloads > 0:
@@ -703,7 +718,7 @@ if __name__ == "__main__":
 					##	will be permanently lost (as it is right now; possible TODO: save missed payload & retry sheet update)
 					###
 
-					if (time.time() - last_update) >= INTERVAL:
+					if (time.time() - last_update) >= INTERVAL-1:
 						entry_time = getTimestamp()	
 
 						## Detect change in day (roll-over) for computing daily flow results
@@ -750,7 +765,12 @@ if __name__ == "__main__":
 						if end_of_day_reached or end_date_reached:
 							break
 
-						level = round(l_sensor.level, 3)
+						level = 0.0
+						NREADS = 5
+						for i in range(NREADS):
+							level += round(l_sensor.level, 3)
+							time.sleep(0.1)
+						level = round(level / NREADS, 3)
 						pH = round(p_sensor.pH, 2)
 						payload.append({ entry_time : { "l" : level, "p" : pH	} })
 						updates += 1	
