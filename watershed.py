@@ -47,7 +47,7 @@ ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
 DEBUG = True
 PRINTS_ON = True
-CROOKS_MODE = False #True
+CROOKS_MODE = True 	## Will clamp pH values within range [6, 12]
 ACCOUNT_FOR_SLUMP = False #True
 WARM_UP_LEVEL_SENSOR = True
 
