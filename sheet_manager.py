@@ -11,7 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 SIMULATE_END_DATE = False #True
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
-CROOKS_MODE = True 
+CROOKS_MODE = False  #True 
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
