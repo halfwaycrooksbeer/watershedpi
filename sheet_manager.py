@@ -9,12 +9,15 @@ import calendar
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-SIMULATE_END_DATE = False #True
+SIMULATE_END_DATE = True #False
+SIM_TIMEDELTA_DAYS = 30  #57
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 CROOKS_MODE = False 	## If set to True, will reduce daily flow results by a factor of 10 
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
+MASTER_SPREADSHEET = "FlowReport"
+MASTER_SHEET_NAME = "Flow"
 
 CREDSFILE = os.path.join(os.environ['HOME'], "watershed_private.json")
 CURSHEETFILE = os.path.join(os.environ['HOME'], "cur_sheet.json")
@@ -40,7 +43,7 @@ INTERVAL_MONTHS = 4  #3 ## Good options: 3, 4, preferrably 6
 INTERVAL_WEEKS = INTERVAL_MONTHS * 4
 INTERVAL_DAYS = INTERVAL_WEEKS * 7
 
-MEASUREMENT_INTERVAL = 15  #3  ## <-- for DEV branch work  # 15  ## seconds
+MEASUREMENT_INTERVAL = 15  #3  ## <-- 3 sec for DEV branch work, else set to 15 seconds
 
 GAL_PER_CUBIC_FT = 7.480543
 K = 0.338
@@ -60,14 +63,14 @@ def get_date_today():
 	today = dt.date.today()
 	## ... add some timedelta before returning to simulate future dates (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		today += dt.timedelta(days=57) #, hours=3, minutes=50)
+		today += dt.timedelta(days=SIM_TIMEDELTA_DAYS) #, hours=3, minutes=50)
 	return today
 
 def get_datetime_now():
 	now = dt.datetime.now()
 	## ... add some timedelta before returning to simulate future datetimes (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		now += dt.timedelta(days=57) #, hours=3, minutes=50)
+		now += dt.timedelta(days=SIM_TIMEDELTA_DAYS) #, hours=3, minutes=50)
 	return now
 
 def get_last_published_date():
@@ -81,8 +84,12 @@ def get_last_published_date():
 		last_line = f.readline().decode()
 	"""
 	with open(PUBLISHED_DATES_FILE) as f:
+		count = 0
 		for line in f:
+			count += 1
 			pass
+		if count == 0:
+			return None 
 		last_line = line.replace("\n","")
 	return last_line
 
@@ -996,9 +1003,10 @@ class SheetManager(metaclass=Singleton):
 	
 	#### UPDATE [9/21/20]
 	def update_master_sheet_results(self, date, gpd):
-		master_sheet_name = "FlowReport"
-		master_worksheet_name = "Flow"
-		master_sheet = self.gc.open(master_sheet_name).worksheet(master_worksheet_name)
+		# master_sheet_name = "FlowReport"
+		# master_worksheet_name = "Flow"
+		# master_sheet = self.gc.open(master_sheet_name).worksheet(master_worksheet_name)
+		master_sheet = self.gc.open(MASTER_SPREADSHEET).worksheet(MASTER_SHEET_NAME)
 		master_sheet.append_row((date, gpd), value_input_option=VALUE_INPUT_OPTION)
 		self.center_last_row(sheet=master_sheet)
 	####
