@@ -11,7 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 SIMULATE_END_DATE = False #True
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
-CROOKS_MODE = True 
+CROOKS_MODE = False  #True 
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
@@ -40,7 +40,7 @@ INTERVAL_MONTHS = 4  #3 ## Good options: 3, 4, preferrably 6
 INTERVAL_WEEKS = INTERVAL_MONTHS * 4
 INTERVAL_DAYS = INTERVAL_WEEKS * 7
 
-MEASUREMENT_INTERVAL = 3  ## <-- for DEV branch work  # 15  ## seconds
+MEASUREMENT_INTERVAL = 15  #3  ## <-- for DEV branch work  # 15  ## seconds
 
 GAL_PER_CUBIC_FT = 7.480543
 K = 0.338
