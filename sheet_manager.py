@@ -544,7 +544,7 @@ class SheetManager(metaclass=Singleton):
 			end_row = start_row
 		# new_row_range = sheet.range(sheet.row_count, 1, sheet.row_count, sheet.col_count) 	# worksheet.range(first_row, first_col, last_row, last_col)
 		new_row_range = "A{0}:C{0}".format(start_row, end_row)  #sheet.row_count)
-		sheet.format(new_row_range, { "horizontalAlignment": "CENTER" })
+		sheet.format(new_row_range, { "horizontalAlignment": "CENTER", "fontSize": 11 })
 
 	def center_row(self, row, sheet=None):
 		self.center_rows(row, row, sheet)
@@ -993,6 +993,15 @@ class SheetManager(metaclass=Singleton):
 		self._dates_updated = True
 		log_published_date(date)
 
+	
+	#### UPDATE [9/21/20]
+	def update_master_sheet_results(self, date, gpd):
+		master_sheet_name = "FlowReport"
+		master_worksheet_name = "Flow"
+		master_sheet = self.gc.open(master_sheet_name).worksheet(master_worksheet_name)
+		master_sheet.append_row((date, gpd), value_input_option=VALUE_INPUT_OPTION)
+		self.center_last_row(sheet=master_sheet)
+	####
 
 	def get_processed_dates(self):
 		res_sheet = self.gc.open(self.cur_sheet.title).worksheet(RESULTS_SHEET_NAME)
