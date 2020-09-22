@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import gspread
+import inspect
 import datetime as dt
 import calendar
 from oauth2client.service_account import ServiceAccountCredentials
@@ -11,6 +12,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 SIMULATE_END_DATE = True #False
 SIM_TIMEDELTA_DAYS = 30  #57
+SIM_TIMEDELTA_HOURS = 1
+SIM_TIMEDELTA_MINS = 41
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 CROOKS_MODE = False 	## If set to True, will reduce daily flow results by a factor of 10 
 
@@ -43,7 +46,7 @@ INTERVAL_MONTHS = 4  #3 ## Good options: 3, 4, preferrably 6
 INTERVAL_WEEKS = INTERVAL_MONTHS * 4
 INTERVAL_DAYS = INTERVAL_WEEKS * 7
 
-MEASUREMENT_INTERVAL = 15  #3  ## <-- 3 sec for DEV branch work, else set to 15 seconds
+MEASUREMENT_INTERVAL = 15   ## <-- 3 sec for DEV branch work, else set to 15 seconds
 
 GAL_PER_CUBIC_FT = 7.480543
 K = 0.338
@@ -63,14 +66,14 @@ def get_date_today():
 	today = dt.date.today()
 	## ... add some timedelta before returning to simulate future dates (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		today += dt.timedelta(days=SIM_TIMEDELTA_DAYS) #, hours=3, minutes=50)
+		today += dt.timedelta(days=SIM_TIMEDELTA_DAYS, hours=SIM_TIMEDELTA_HOURS, minutes=SIM_TIMEDELTA_MINS)
 	return today
 
 def get_datetime_now():
 	now = dt.datetime.now()
 	## ... add some timedelta before returning to simulate future datetimes (for DEBUG) ...
 	if SIMULATE_END_DATE:
-		now += dt.timedelta(days=SIM_TIMEDELTA_DAYS) #, hours=3, minutes=50)
+		now += dt.timedelta(days=SIM_TIMEDELTA_DAYS, hours=SIM_TIMEDELTA_HOURS, minutes=SIM_TIMEDELTA_MINS)
 	return now
 
 def get_last_published_date():
@@ -854,13 +857,13 @@ class SheetManager(metaclass=Singleton):
 		for dict_entry in list_of_data_dict:
 			entry = Entry(dict_entry, self.cur_sheet, find_row_on_init=False)
 			payload.append(entry.values)
-		try:
-			self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
-		except:
-			## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
-			self._gc = None
-			self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
-			self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
+		#try:
+		self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
+		#except:
+		#	## Catch an 'UNAUTHENTICATED' APIError if authentication credentials expire
+		#	self._gc = None
+		#	self.cur_sheet.wksht = self.gc.open(self.cur_sheet.title).worksheet(self.cur_sheet.wksht_title)
+		#	self.cur_sheet.wksht.append_rows(payload, value_input_option=VALUE_INPUT_OPTION)
 		
 		last_row = self.cur_sheet.wksht.row_count
 		start_row = last_row - len(payload)
@@ -988,6 +991,11 @@ class SheetManager(metaclass=Singleton):
 
 		if CROOKS_MODE:
 			day_gallons /= 10.0
+		
+		print("[get_results] Calling update_master_sheet_results ...")
+		self.update_master_sheet_results(date, day_gallons)
+
+		print("[get_results] Calling update_results ...")
 		self.update_results(date, day_gallons, day_min_p, day_max_p)
 
 
@@ -1003,6 +1011,7 @@ class SheetManager(metaclass=Singleton):
 	
 	#### UPDATE [9/21/20]
 	def update_master_sheet_results(self, date, gpd):
+		print("(SheetManager.update_master_sheet_results invoked)")
 		# master_sheet_name = "FlowReport"
 		# master_worksheet_name = "Flow"
 		# master_sheet = self.gc.open(master_sheet_name).worksheet(master_worksheet_name)
@@ -1268,6 +1277,8 @@ class CurrentSheet():
 	def wksht(self, value):
 		self._wksht = value 
 		print('[CurrentSheet.wksht] Updated to: {}'.format(value))
+		frame = inspect.stack()
+		print("\t(wksht.setter called from [function '{}', line {}], which was called from [function '{}', line {}]\n)".format(frame[1].function, frame[1].lineno, frame[2].function, frame[2].lineno))
 
 	@property
 	def end_date_obj(self):

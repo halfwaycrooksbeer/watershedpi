@@ -665,7 +665,9 @@ if __name__ == "__main__":
 		initial_results_date_check_made = False 
 
 		try:
-			last_date_published = sm.get_last_date_processed()
+			#last_date_published = sm.get_last_date_processed()
+			####  CHANGE ME !!!  ^ uncomment above line after finished debugging  !!!  ####
+			last_date_published = None
 		except:
 			last_date_published = None
 
@@ -762,7 +764,12 @@ if __name__ == "__main__":
 							print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
 							end_date_reached = True
 
-						if end_of_day_reached or end_date_reached:
+						if end_of_day_reached:
+							print("\n~~~  E N D _  O F _ D A Y _  R E A C H E D  ~~~\n")
+							break
+
+						if end_date_reached:
+							print("\n~~~  E N D _  D A T E _  R E A C H E D  ~~~\n")
 							break
 
 						level = 0.0
@@ -784,10 +791,11 @@ if __name__ == "__main__":
 					if loop_cnt % 10 == 0:
 						level = round(l_sensor.level, 3)
 
-				if not DRY_RUN:
+				if not DRY_RUN and not (payload is None or len(payload) == 0):
 					### UPDATE [ 8/7/2020 ]
 					if not CHECK_NETWORK_EACH_ITERATION:
 						if check_connection():
+							print("Network connected --> passing `payload` to SheetManager.append_data() ...")
 							sm.append_data(payload)
 						elif PERSIST_OFFLINE:
 							## Cache the failed payload
@@ -802,7 +810,9 @@ if __name__ == "__main__":
 				if end_of_day_reached:
 					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
 					sm.get_results(prev_entry_time_obj)
-					prev_entry_time_obj = entry_time_obj
+					prev_entry_time_obj = entry_time_obj - dt.timedelta(minutes=3)
+					entry_time = getTimestamp()
+					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 					end_of_day_reached = False
 
 				if end_date_reached:
@@ -812,12 +822,15 @@ if __name__ == "__main__":
 					print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
 					sm.generate_newsheet()
 					prev_entry_time_obj = entry_time_obj
+					entry_time = getTimestamp()
+					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 					end_date_reached = False
 
 			# except KeyboardInterrupt:
 			# 	break	
 
 			except (KeyboardInterrupt, SystemExit, Exception) as exc:
+			#except (SystemExit, Exception) as exc:
 				# exc_string = traceback.format_exc()
 				exc_name = exc.__class__.__name__
 				exc_desc = str(exc)
