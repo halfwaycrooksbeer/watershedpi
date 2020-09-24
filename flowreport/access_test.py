@@ -12,7 +12,12 @@ import gspread
 
 credsfile = os.path.join(os.getcwd(), "flowreport_key.json")
 
-gc = gspread.service_account(filename=credsfile)
+try:
+	gc = gspread.service_account(filename=credsfile)
+except AttributeError:
+	os.system('pip3 install --upgrade gspread')
+	import gspread
+	gc = gspread.service_account(filename=credsfile)
 
 sh = gc.open("FlowReport")
 
