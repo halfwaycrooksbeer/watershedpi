@@ -27,6 +27,8 @@ import sheet_manager
 ## CONSTANTS
 ###############################################################################
 
+ON_DEV_BRANCH = sheet_manager.ON_DEV_BRANCH
+
 DRY_RUN = False  #True  ## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
 UPDATE_BASHRC = False #True
 TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
@@ -74,7 +76,7 @@ ZERO = 5
 WARNING = 6
 
 ## Program values
-INTERVAL = 15  #if not ON_DEV_BRANCH else 3 	## seconds
+INTERVAL = sheet_manager.MEASUREMENT_INTERVAL  #15   ## seconds
 JSON_CAPACITY = 20
 NSAMPLES = 8
 SPIKE_THRESH = 0.14		## perhaps try 0.25 && 0.5 as well...
@@ -132,7 +134,10 @@ class SensorBase():
 
 	@property
 	def voltage(self):
-		self._voltage = self._ain.voltage
+		if ON_DEV_BRANCH and self._ain._ads is None:
+			self._voltage = 2.11 	## For testing w/o ADC
+		else:
+			self._voltage = self._ain.voltage
 		return self._voltage
 
 	@property
@@ -141,6 +146,8 @@ class SensorBase():
 
 	@property
 	def _value(self):
+		if ON_DEV_BRANCH and self._ain._ads is None:
+			return 211 		## For testing w/o ADC
 		return self._ain.value
 	
 
@@ -155,11 +162,18 @@ class LevelSensor(SensorBase):	## EchoPod DL10 Ultrasonic Liquid Level Transmitt
 			if not adc is None:
 				ads = adc
 			else:
-				if ADS_TYPE == 1015:
-					ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
-				else:
-					ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				try:
+					if ADS_TYPE == 1015:
+						ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+					else:
+						ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				# except (OSError, ValueError) as err:
+				except:
+					print("[LevelSensor]  No ADS1x15 breakout detected!")
+					ads = None
+		
 		super().__init__(analog_in.AnalogIn(ads, LevelSensor.L_PIN))
+		
 		self.history = [0.0] * NSAMPLES
 		self._sampleCnt = 0
 		self._idx = 0
@@ -281,10 +295,15 @@ class PHSensor(SensorBase): 	## PH500
 			if not adc is None:
 				ads = adc
 			else:
-				if ADS_TYPE == 1015:
-					ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
-				else:
-					ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				try:
+					if ADS_TYPE == 1015:
+						ads = ads1015.ADS1015(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+					else:
+						ads = ads1115.ADS1115(board.I2C(), gain=ADC_GAIN, address=ADC_ADDR)
+				except:
+					print("[PHSensor]  No ADS1x15 breakout detected!")
+					ads = None
+
 		super().__init__(analog_in.AnalogIn(ads, PHSensor.P_PIN))
 
 	@property
@@ -320,10 +339,14 @@ def setup():
 		if i2c is None:
 			i2c = busio.I2C(board.SCL, board.SDA)
 		if adc is None:
-			if ADS_TYPE == 1015:
-				adc = ads1015.ADS1015(i2c, gain=ADC_GAIN, address=ADC_ADDR)
-			else:
-				adc = ads1115.ADS1115(i2c, gain=ADC_GAIN, address=ADC_ADDR)
+			try:
+				if ADS_TYPE == 1015:
+					adc = ads1015.ADS1015(i2c, gain=ADC_GAIN, address=ADC_ADDR)
+				else:
+					adc = ads1115.ADS1115(i2c, gain=ADC_GAIN, address=ADC_ADDR)
+			except (OSError, ValueError) as err:
+				print("[setup]  No ADS1x15 breakout detected!")
+				adc = None
 		if p_sensor is None:
 			p_sensor = PHSensor(ads=adc)
 		if l_sensor is None:
@@ -665,7 +688,7 @@ if __name__ == "__main__":
 		initial_results_date_check_made = False 
 
 		try:
-			last_date_published = sm.get_last_date_processed()
+			last_date_published = sm.get_last_date_processed() if not ON_DEV_BRANCH else None
 		except:
 			last_date_published = None
 
@@ -762,7 +785,12 @@ if __name__ == "__main__":
 							print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
 							end_date_reached = True
 
-						if end_of_day_reached or end_date_reached:
+						if end_of_day_reached:
+							print("\n~~~  E N D _  O F _ D A Y _  R E A C H E D  ~~~\n")
+							break
+
+						if end_date_reached:
+							print("\n~~~  E N D _  D A T E _  R E A C H E D  ~~~\n")
 							break
 
 						level = 0.0
@@ -784,10 +812,11 @@ if __name__ == "__main__":
 					if loop_cnt % 10 == 0:
 						level = round(l_sensor.level, 3)
 
-				if not DRY_RUN:
+				if not DRY_RUN and not (payload is None or len(payload) == 0):
 					### UPDATE [ 8/7/2020 ]
 					if not CHECK_NETWORK_EACH_ITERATION:
 						if check_connection():
+							print("Network connected --> passing `payload` to SheetManager.append_data() ...")
 							sm.append_data(payload)
 						elif PERSIST_OFFLINE:
 							## Cache the failed payload
@@ -803,6 +832,8 @@ if __name__ == "__main__":
 					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
 					sm.get_results(prev_entry_time_obj)
 					prev_entry_time_obj = entry_time_obj
+					entry_time = getTimestamp()
+					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 					end_of_day_reached = False
 
 				if end_date_reached:
@@ -812,12 +843,15 @@ if __name__ == "__main__":
 					print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
 					sm.generate_newsheet()
 					prev_entry_time_obj = entry_time_obj
+					entry_time = getTimestamp()
+					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 					end_date_reached = False
 
 			# except KeyboardInterrupt:
 			# 	break	
 
 			except (KeyboardInterrupt, SystemExit, Exception) as exc:
+			#except (SystemExit, Exception) as exc:
 				# exc_string = traceback.format_exc()
 				exc_name = exc.__class__.__name__
 				exc_desc = str(exc)
