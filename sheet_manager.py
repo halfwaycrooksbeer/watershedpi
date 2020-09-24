@@ -11,17 +11,19 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from flowreport import flowreport
 
-SIMULATE_END_DATE = True #False
-SIM_TIMEDELTA_DAYS = 30  #57
-SIM_TIMEDELTA_HOURS = 1
-SIM_TIMEDELTA_MINS = 41
+ON_DEV_BRANCH = False #True 	## CHANGE ME TO False before running in the field
+SIMULATE_END_DATE = ON_DEV_BRANCH and True #False
+SIM_TIMEDELTA_DAYS = 31  #57
+SIM_TIMEDELTA_HOURS = 5
+SIM_TIMEDELTA_MINS = 5
+
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 CROOKS_MODE = False 	## If set to True, will reduce daily flow results by a factor of 10 
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
 # MASTER_SPREADSHEET = "FlowReport"
-# MASTER_SHEET_NAME = "Flow"
+# MASTER_SHEET_NAME = "Flow"    <-- Moved to flowreport.py
 
 CREDSFILE = os.path.join(os.environ['HOME'], "watershed_private.json")
 CURSHEETFILE = os.path.join(os.environ['HOME'], "cur_sheet.json")
