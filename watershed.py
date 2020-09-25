@@ -16,12 +16,7 @@ import datetime as dt
 import RPi.GPIO as GPIO
 from adafruit_ads1x15 import ads1115, ads1015, analog_in
 
-
-# ON_DEV_BRANCH = True 
-# if not ON_DEV_BRANCH:
 import sheet_manager
-# else:
-	# import sheet_manager2 as sheet_manager
 
 ###############################################################################
 ## CONSTANTS
@@ -29,10 +24,10 @@ import sheet_manager
 
 ON_DEV_BRANCH = sheet_manager.ON_DEV_BRANCH
 
-DRY_RUN = False  #True  ## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
+DRY_RUN = False 	## Will skip sheet_manager.append_data() call; SET TO FALSE BEFORE DEPLOYMENT
 UPDATE_BASHRC = False #True
-TESTING = False #True 	## SET TO FALSE BEFORE DEPLOYMENT
-USE_GAS = False 
+TESTING = False 	## SET TO FALSE BEFORE DEPLOYMENT
+USE_GAS = False
 
 ### UPDATE [ 8/7/2020 ]
 import json
@@ -42,8 +37,7 @@ FAILED_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "missed_payloads.txt")
 NUM_PAYLOADS_FILE = os.path.join(os.environ['HOME'], "num_payloads.txt")
 MAX_FAILED_PAYLOADS = 20
 total_failed_payloads = 0
-online = False 
-# offline = True
+online = False
 ###
 ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
@@ -52,6 +46,47 @@ PRINTS_ON = True
 CROOKS_MODE = True 	## Will clamp pH values within range [6, 12]
 ACCOUNT_FOR_SLUMP = False #True
 WARM_UP_LEVEL_SENSOR = True
+
+#### UPDATE [9/24/20]
+from pathlib import Path
+SMR_DAY_OF_MONTH = 20  	## Auto-generate new SMR form on the 20th day of each month
+#SMR_GEN_COMMAND = f'.{os.getcwd()}/SMR/smr.py &'
+SMR_GEN_ENABLED = True
+SMR_GEN_FILEPATH_FORMAT = '{0}/SMR/smr.py'
+SMR_GEN_COMMAND_FORMAT = '{0} &'
+SMR_GEN_FILEPATH = SMR_GEN_FILEPATH_FORMAT.format(os.getcwd())
+
+if not os.path.exists(SMR_GEN_FILEPATH):
+	print(f"'{SMR_GEN_FILEPATH}' not found.")
+	SMR_GEN_FILEPATH = SMR_GEN_FILEPATH_FORMAT.format(os.path.join(os.getcwd(), 'watershedpi'))
+	if not os.path.exists(SMR_GEN_FILEPATH):
+		msg = f"\nSMR generator file '{SMR_GEN_FILEPATH}' not found.\nAborting.\n"
+		print(msg)
+		with open(ERROR_LOGFILE, 'w') as f:
+			f.write(msg)
+		sys.exit(1)
+	else:
+		print(f"SMR generator file '{SMR_GEN_FILEPATH}' found.")
+else:
+	print(f"SMR generator file '{SMR_GEN_FILEPATH}' found.")
+
+SMR_GEN_COMMAND = SMR_GEN_COMMAND_FORMAT.format(SMR_GEN_FILEPATH)
+SMR_GEN_LOCKFILE = os.path.join(os.environ['HOME'], 'smr_gen.lock')
+
+"""
+def generate_smr_form():
+	if sheet_manager.get_datetime_now().day == SMR_DAY_OF_MONTH:
+		if not os.path.exists(SMR_GEN_LOCKFILE):
+			#with open(SMR_GEN_LOCKFILE, 'a') as f:
+			#	os.utime(SMR_GEN_LOCKFILE, None)
+			Path(SMR_GEN_LOCKFILE).touch()
+			os.system(SMR_GEN_COMMAND)
+	else:
+		if os.path.exists(SMR_GEN_LOCKFILE):
+			os.remove(SMR_GEN_LOCKFILE)
+"""
+
+####
 
 GID = "AKfycbwcei1kWqE1zLnNm2lciSfsJhxnNFaKASewn29hSIBjGAKZ3m-f"
 URL = "https://script.google.com/macros/s/{0}/exec?{1}"
@@ -749,6 +784,18 @@ if __name__ == "__main__":
 						entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
+
+						#### UPDATE [9/24/20]
+						if entry_time_obj.day == SMR_DAY_OF_MONTH:
+							if not os.path.exists(SMR_GEN_LOCKFILE):
+								if check_connection():
+									print("SMR generation day of the month reached --> auto-generating now.")
+									Path(SMR_GEN_LOCKFILE).touch()
+									os.system(SMR_GEN_COMMAND)
+						elif os.path.exists(SMR_GEN_LOCKFILE):
+							print(f"Erasing SMR_GEN_LOCKFILE ({SMR_GEN_LOCKFILE}) now.")
+							os.remove(SMR_GEN_LOCKFILE)
+						####
 
 						## For when program has missed several days since last running
 						if not initial_results_date_check_made and '/' in last_published_date:

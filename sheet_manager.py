@@ -11,11 +11,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from flowreport import flowreport
 
-ON_DEV_BRANCH = False #True 	## CHANGE ME TO False before running in the field
+ON_DEV_BRANCH = False 	## CHANGE ME to False before running in the field
 SIMULATE_END_DATE = ON_DEV_BRANCH and True #False
-SIM_TIMEDELTA_DAYS = 31  #57
-SIM_TIMEDELTA_HOURS = 5
-SIM_TIMEDELTA_MINS = 5
+SIM_TIMEDELTA_DAYS = 25
+SIM_TIMEDELTA_HOURS = 21
+SIM_TIMEDELTA_MINS = 12
 
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 CROOKS_MODE = False 	## If set to True, will reduce daily flow results by a factor of 10 

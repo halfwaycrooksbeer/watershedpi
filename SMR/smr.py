@@ -18,7 +18,7 @@ except:
 #########################################################################################
 
 NO_WEEKEND_PRODUCTION = False
-TESTS_ONLY = False
+TESTS_ONLY = True  #False
 PRINT_DATA = False
 
 TEMPLATE_TITLE = "SMR Form_Template"
