@@ -83,19 +83,21 @@ def test_get_smr_title():
 
 #########################################################################################
 
+smr_spreadsheet = None
 smr_form = None 
 
 def get_smr_form(title=None):
-	global smr_form 
+	global smr_spreadsheet, smr_form 
 	if title is None:
 		title = get_smr_title()
 	gc = get_client()
 	## If not `new_smr_form_name exists in current_smr_forms, then create new smr_form -- else fetch`
 	try:
-		smr_form = gc.open(title).sheet1
+		smr_spreadsheet = gc.open(title)
 	except gspread.SpreadsheetNotFound:
 		template = gc.open(TEMPLATE_TITLE)
-		smr_form = gc.copy(template.id, title=title, copy_permissions=True).sheet1
+		smr_spreadsheet = gc.copy(template.id, title=title, copy_permissions=True)
+	smr_form = smr_spreadsheet.sheet1
 	return smr_form 
 
 
@@ -251,6 +253,27 @@ def main():
 	smr.update('B36:D36', [['=MIN(B2:B32)', '=MIN(C2:C32)', '=MIN(D2:D32)']], raw=False)
 
 	smr_url = get_smr_url(smr=smr)
+	msg = f"[halfwaycrooks] A new SMR form for {get_month_name()} {year} has been auto-generated!\n\nView the form here:  {smr_url}\n\n\n(notification sent by a robot)\n"
+
+	for email in ('joran@halfwaycrooks.beer', 'shawn@halfwaycrooks.beer', 'acondict11@gmail.com', ):
+		gc.insert_permission(
+			smr_spreadsheet.id,
+			email,
+			perm_type='user',
+			role='writer',
+			notify=True,
+			email_message=msg
+		)
+
+	## Make the spreadsheet publicly readable
+	gc.insert_permission(
+		smr_spreadsheet.id,
+		None,
+		perm_type='anyone',
+		role='reader',
+		notify=False,
+	)
+
 	print(f"\n[{__file__.replace('./','')}]\n'{smr_title}' finished:\n  ==>  {smr_url}\n")
 
 
