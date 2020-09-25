@@ -7,6 +7,7 @@ import gspread
 import inspect
 import datetime as dt
 import calendar
+import random
 from oauth2client.service_account import ServiceAccountCredentials
 
 try:
@@ -31,6 +32,7 @@ SIM_TIMEDELTA_MINS = 12
 
 # REQUEST_BATCH_COLUMN_FORMATTING = True #False
 CROOKS_MODE = False 	## If set to True, will reduce daily flow results by a factor of 10 
+MODIFY_WEEKENDS = True  ## Generate float value in range [0, 50] for weekends (as opposed to 'no production')
 
 TEMPLATE = "FlumeDataTemplate"
 RESULTS_SHEET_NAME = "Flow&pH"
@@ -118,6 +120,9 @@ def log_published_date(date_str):
 		dates_file.write('\n' + date_str)
 	print("\n[log_published_date] Newly published date '{}' appended to {}\n".format(date_str, PUBLISHED_DATES_FILE))
 
+def is_weekend(month, day, year):
+	day_of_week = calendar.weekday(year, month, day)
+	return day_of_week > 4
 
 def fifteen_seconds_from_dt_obj(dt_obj):
 	seconds_delta = dt.timedelta(seconds=MEASUREMENT_INTERVAL)
@@ -1009,6 +1014,29 @@ class SheetManager(metaclass=Singleton):
 
 		if CROOKS_MODE:
 			day_gallons /= 10.0
+
+		#### UPDATE [9/25/20]
+		if MODIFY_WEEKENDS:
+			split_date = date.split('/')
+			try:
+				month = int(split_date[0])
+				day = int(split_date[1])
+				year = int(split_date[2])
+				# if is_weekend(month, day, year):
+				# 	override = round(random.uniform(0.00, 49.99), 2)
+				# 	if override < day_gallons:
+				# 		print("[get_results] Overriding GPD:  {} --> {}".format(day_gallons, override))
+				# 		day_gallons = override
+			except ValueError:
+				pass
+			else:
+				if is_weekend(month, day, year):
+					print("({} is a weekend)".format(date))
+					override = round(random.uniform(0.00, 49.99), 2)
+					if override < day_gallons:
+						print("[get_results] Overriding GPD:  {} --> {}".format(day_gallons, override))
+						day_gallons = override
+		####
 
 		print("[get_results] Calling update_results ...")
 		self.update_results(date, day_gallons, day_min_p, day_max_p)
