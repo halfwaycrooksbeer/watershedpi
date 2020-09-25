@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SKIP_BLINKA_INSTALL=true
+
 ## Check network
 netfails=0
 while [ $netfails -lt 5 ]; do
@@ -53,7 +55,11 @@ if [ -f "$PIP_REQS_FILE" ]; then
 		if [ "" = "$PKG_OK" ]; then
 			printf "$(ansi --red --bold not yet installed) -- installing now...\n"
 			# ALL_INSTALLED=false
-			$PIP install --user $p 
+			if [[ "$p" = "adafruit-blinka" && $SKIP_BLINKA_INSTALL = true ]]; then
+                                printf "$(ansi --green Skipping install for) $(ansi --red adafruit-blinka)\n"
+                        else
+                                $PIP install --upgrade --user $p
+                        fi
 		else
 			printf "$(ansi --green --bold $PKG_OK)\n"
 		fi
@@ -69,7 +75,11 @@ else
 		printf "$(ansi --yellow Checking for package) $(ansi --cyan $p):\t-->\t"
 		if [ "" = "$PKG_OK" ]; then
 			printf "$(ansi --red --bold not yet installed) -- installing now...\n\n"
-			$PIP install --user $p
+			if [[ "$p" = "adafruit-blinka" && $SKIP_BLINKA_INSTALL = true ]]; then
+				printf "$(ansi --green Skipping install for) $(ansi --red adafruit-blinka)\n"
+			else
+				$PIP install --upgrade --user $p
+			fi
 		else
 			printf "$(ansi --green --bold $PKG_OK)\n"
 		fi
