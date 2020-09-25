@@ -10,12 +10,18 @@ import calendar
 from oauth2client.service_account import ServiceAccountCredentials
 
 try:
-	from flowreport import flowreport
+	if os.getcwd().split('/')[-1] == 'watershedpi':
+		from flowreport import flowreport
+	else:
+		from watershedpi.flowreport import flowreport
 except:
 	fp_path = os.path.join(os.environ['HOME'], 'watershedpi', 'flowreport')
 	print("[sheet_manager]  Appending '{}' to sys.path".format(fp_path))
 	sys.path.append(fp_path)
-	from flowreport import flowreport
+	if os.getcwd().split('/')[-1] == 'watershedpi':
+		from flowreport import flowreport
+	else:
+		from watershedpi.flowreport import flowreport
 
 ON_DEV_BRANCH = False 	## CHANGE ME to False before running in the field
 SIMULATE_END_DATE = ON_DEV_BRANCH and True #False
