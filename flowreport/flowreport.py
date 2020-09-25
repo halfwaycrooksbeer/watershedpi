@@ -29,7 +29,7 @@ def update_master_sheet_results(date, gpd):
 	# ws.append_row((date, gpd), value_input_option='USER_ENTERED')
 
 	insert_row = ws.row_count
-	if ws.acell(f'A{insert_row-1}').value == '':
+	if ws.acell('A{}'.format(insert_row-1)).value == '':
 		insert_row -= 1
 
 	if NO_WEEKEND_PRODUCTION:
@@ -46,11 +46,11 @@ def update_master_sheet_results(date, gpd):
 			pass
 
 	ws.insert_row([date, gpd], index=insert_row, value_input_option='USER_ENTERED')
-	ws.update_acell(f'C{insert_row}', ws.acell(f'C{insert_row-1}').value)
-	ws.update_acell(f'C{insert_row-1}', '')
-	ws.update_acell(f'D{insert_row}', f'=SUM(B2:B{insert_row})')
+	ws.update_acell('C{}'.format(insert_row), ws.acell('C{}'.format(insert_row-1)).value)
+	ws.update_acell('C{}'.format(insert_row-1), '')
+	ws.update_acell('D{}'.format(insert_row), '=SUM(B2:B{})'.format(insert_row))
 
 	new_row_range = "A{0}:B{0}".format(insert_row)
 	ws.format(new_row_range, { "horizontalAlignment": "CENTER", "textFormat": { "fontSize": 11, }, } )
 
-	print(f"[update_master_sheet_results]  {MASTER_SPREADSHEET} updated for {date}")
+	print("[update_master_sheet_results]  {} updated for {}".format(MASTER_SPREADSHEET, date))

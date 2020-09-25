@@ -79,7 +79,7 @@ def get_smr_title():
 
 def test_get_smr_title():
 	title = get_smr_title()
-	print(f"\n[test_get_smr_title]\ntitle = '{title}'\n")
+	print("\n[test_get_smr_title]\ntitle = '{}'\n".format(title))
 
 #########################################################################################
 
@@ -103,7 +103,7 @@ def get_smr_form(title=None):
 
 def test_get_smr_form():
 	smr_form = get_smr_form()
-	print(f"\n[test_get_smr_form]\nsmr_form = '{smr_form}'\n")
+	print("\n[test_get_smr_form]\nsmr_form = '{}'\n".format(smr_form))
 
 
 #########################################################################################
@@ -121,7 +121,7 @@ def get_smr_url(smr=None):
 
 def test_get_smr_url():
 	smr_url = get_smr_url()
-	print(f"\n[test_get_smr_url]\nsmr_url = '{smr_url}'\n")
+	print("\n[test_get_smr_url]\nsmr_url = '{}'\n".format(smr_url))
 
 
 #########################################################################################
@@ -145,7 +145,7 @@ def get_source_sheet_title():
 
 def test_get_source_sheet_title():
 	title = get_source_sheet_title()
-	print(f"\n[test_get_source_sheet_title]\ntitle = '{title}'\n")
+	print("\n[test_get_source_sheet_title]\ntitle = '{}'\n".format(title))
 
 #########################################################################################
 
@@ -162,7 +162,7 @@ def get_source_sheet(title=None):
 
 def test_get_source_sheet():
 	source_sheet = get_source_sheet()
-	print(f"\n[test_get_source_sheet]\nsource_sheet = '{source_sheet}'\n")
+	print("\n[test_get_source_sheet]\nsource_sheet = '{}'\n".format(source_sheet))
 
 #########################################################################################
 
@@ -201,7 +201,7 @@ def get_month_data(sh=None):
 
 def test_get_month_data():
 	month_data = get_month_data()
-	print(f"\n[test_get_month_data]\nmonth_data = '{month_data}'\n")
+	print("\n[test_get_month_data]\nmonth_data = '{}'\n".format(month_data))
 
 #########################################################################################
 #########################################################################################
@@ -213,7 +213,6 @@ def tests():
 	test_get_smr_url()
 	test_get_source_sheet()
 	test_get_month_data()
-
 
 
 def main():
@@ -231,7 +230,7 @@ def main():
 			payload = [gpd, ph_low, ph_high] if not is_weekend else ['no production']*3
 		else:
 			payload = [gpd, ph_low, ph_high]
-		smr.update(f'B{row}:D{row}', [payload])   #, raw=False)
+		smr.update('B{0}:D{0}'.format(row), [payload])   #, raw=False)
 
 		if day == 29:
 			hit_29 = True 
@@ -253,7 +252,7 @@ def main():
 	smr.update('B36:D36', [['=MIN(B2:B32)', '=MIN(C2:C32)', '=MIN(D2:D32)']], raw=False)
 
 	smr_url = get_smr_url(smr=smr)
-	msg = f"[halfwaycrooks] A new SMR form for {get_month_name()} {year} has been auto-generated!\n\nView the form here:  {smr_url}\n\n(notification sent by Austin's robot)\n"
+	msg = "[halfwaycrooks] A new SMR form for {} {} has been auto-generated!\n\nView the form here:  {}\n\n(notification sent by Austin's robot)\n".format(get_month_name(), year, smr_url)
 
 	for email in ('joran@halfwaycrooks.beer', 'shawn@halfwaycrooks.beer', 'acondict11@gmail.com', ):
 		gc.insert_permission(
@@ -274,12 +273,12 @@ def main():
 		notify=False,
 	)
 
-	print(f"\n[{__file__.replace('./','')}]\n'{smr_title}' finished:\n  ==>  {smr_url}\n")
+	print("\n[{}]\n'{}' finished:\n  ==>  {}\n".format(__file__.replace('./',''), smr_title, smr_url))
 
 
 
 if __name__ == "__main__":
-	print(f"[{__file__.replace('./','')}]\nGenerating SMR Form for {get_month_name()} {year} now.")
+	print("[{}]\nGenerating SMR Form for {} {} now.".format(__file__.replace('./',''), get_month_name(), year))
 	if TESTS_ONLY:
 		print("\n ~~~  T E S T S _ O N L Y  ~~~ \n")
 		tests()

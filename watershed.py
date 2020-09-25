@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+
+### NOTE: Default python3 version on watershedpi is python3.5, no f-string support!
+
 import os
 import sys
 import ast
