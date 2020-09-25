@@ -7,7 +7,9 @@ https://script.google.com/d/1AlLwyfildJGyAe10d6RKJN9urSGKdb_S6vhvEkX5M3HPVJ6YZRe
 
 """
 import os
+import calendar
 
+NO_WEEKEND_PRODUCTION = True
 MASTER_SPREADSHEET = "FlowReport"
 MASTER_SHEET_NAME = "Flow"
 CREDS_FILE = os.path.join('/', *(os.path.abspath(__file__).split('/')[:-1]), "flowreport_key.json")
@@ -29,7 +31,20 @@ def update_master_sheet_results(date, gpd):
 	insert_row = ws.row_count
 	if ws.acell(f'A{insert_row-1}').value == '':
 		insert_row -= 1
-	
+
+	if NO_WEEKEND_PRODUCTION:
+		split_date = date.split('/')
+		try:
+			month = int(split_date[0])
+			day = int(split_date[1])
+			year = int(split_date[2])
+			day_of_week = calendar.weekday(year, month, day)
+			is_weekend = 5 <= day_of_week <= 6
+			if is_weekend:
+				gpd = 'no production'
+		except ValueError:
+			pass
+
 	ws.insert_row([date, gpd], index=insert_row, value_input_option='USER_ENTERED')
 	ws.update_acell(f'C{insert_row}', ws.acell(f'C{insert_row-1}').value)
 	ws.update_acell(f'C{insert_row-1}', '')
