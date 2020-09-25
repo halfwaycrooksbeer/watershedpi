@@ -44,6 +44,8 @@ online = False
 ###
 ERROR_LOGFILE = os.path.join(os.environ['HOME'], "hc_errors.log")
 
+file_list = (FAILED_PAYLOADS_FILE, ERROR_LOGFILE, sheet_manager.PUBLISHED_DATES_FILE)
+
 DEBUG = True
 PRINTS_ON = True
 CROOKS_MODE = True 	## Will clamp pH values within range [6, 12]
@@ -744,19 +746,21 @@ if __name__ == "__main__":
 			print("\t|  LAST RESULTS FOUND FOR {}  |\n".format(last_published_date))
 
 		while True:
-			### UPDATED [ 9/1/2020 ]
-			try:
-				if os.stat(ERROR_LOGFILE).st_size > 30000:
-					os.system('cat /dev/null > {}'.format(ERROR_LOGFILE))
-					with open(ERROR_LOGFILE, 'a') as f:
-						f.write('[ {} ]\t--> {} contents wiped after exceeding 30kB\n'.format(getTimestamp(), ERROR_LOGFILE))
-			except (OSError, FileNotFoundError) as exc:
-				exc_name = exc.__class__.__name__
-				exc_desc = str(exc)
-				exc_lineno = sys.exc_info()[2].tb_lineno
-				exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
-				with open(ERROR_LOGFILE, 'a') as f:
-					f.write('[ {} ]\t--> Operations regarding the ERROR_LOGFILE incurred an exception:\n\t{}\n'.format(getTimestamp(), exc_string))
+			### UPDATED [ 9/1/2020 ]  -  [ 9/25/2020 ]
+			for file in file_list:
+				if os.path.isfile(file):
+					try:
+						if os.stat(file).st_size > 30000:
+							os.system('cat /dev/null > {}'.format(file))
+							with open(ERROR_LOGFILE, 'a') as f:
+								f.write("[ {} ]\t--> '{}' contents wiped after exceeding 30kB\n".format(getTimestamp(), file))
+					except (OSError, FileNotFoundError) as exc:
+						exc_name = exc.__class__.__name__
+						exc_desc = str(exc)
+						exc_lineno = sys.exc_info()[2].tb_lineno
+						exc_string = '{}:  "{}"  (line {})\n'.format(exc_name, exc_desc, exc_lineno)
+						with open(ERROR_LOGFILE, 'a') as f:
+							f.write("[ {} ]\t--> Operations regarding the file '{}' incurred an exception:\n\t{}\n".format(getTimestamp(), file, exc_string))
 			###
 
 			try:
