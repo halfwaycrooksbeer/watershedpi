@@ -253,7 +253,7 @@ def main():
 	smr.update('B36:D36', [['=MIN(B2:B32)', '=MIN(C2:C32)', '=MIN(D2:D32)']], raw=False)
 
 	smr_url = get_smr_url(smr=smr)
-	msg = f"[halfwaycrooks] A new SMR form for {get_month_name()} {year} has been auto-generated!\n\nView the form here:  {smr_url}\n\n\n(notification sent by a robot)\n"
+	msg = f"[halfwaycrooks] A new SMR form for {get_month_name()} {year} has been auto-generated!\n\nView the form here:  {smr_url}\n\n(notification sent by Austin's robot)\n"
 
 	for email in ('joran@halfwaycrooks.beer', 'shawn@halfwaycrooks.beer', 'acondict11@gmail.com', ):
 		gc.insert_permission(
