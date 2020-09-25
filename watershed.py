@@ -50,25 +50,25 @@ WARM_UP_LEVEL_SENSOR = True
 #### UPDATE [9/24/20]
 from pathlib import Path
 SMR_DAY_OF_MONTH = 20  	## Auto-generate new SMR form on the 20th day of each month
-#SMR_GEN_COMMAND = f'.{os.getcwd()}/SMR/smr.py &'
+#SMR_GEN_COMMAND = '.{}/SMR/smr.py &'.format(os.getcwd())
 SMR_GEN_ENABLED = True
 SMR_GEN_FILEPATH_FORMAT = '{0}/SMR/smr.py'
 SMR_GEN_COMMAND_FORMAT = '{0} &'
 SMR_GEN_FILEPATH = SMR_GEN_FILEPATH_FORMAT.format(os.getcwd())
 
 if not os.path.exists(SMR_GEN_FILEPATH):
-	print(f"'{SMR_GEN_FILEPATH}' not found.")
+	print("'{}' not found.".format(SMR_GEN_FILEPATH))
 	SMR_GEN_FILEPATH = SMR_GEN_FILEPATH_FORMAT.format(os.path.join(os.getcwd(), 'watershedpi'))
 	if not os.path.exists(SMR_GEN_FILEPATH):
-		msg = f"\nSMR generator file '{SMR_GEN_FILEPATH}' not found.\nAborting.\n"
+		msg = "\nSMR generator file '{}' not found.\nAborting.\n".format(SMR_GEN_FILEPATH)
 		print(msg)
 		with open(ERROR_LOGFILE, 'w') as f:
 			f.write(msg)
 		sys.exit(1)
 	else:
-		print(f"SMR generator file '{SMR_GEN_FILEPATH}' found.")
+		print("SMR generator file '{}' found.".format(SMR_GEN_FILEPATH))
 else:
-	print(f"SMR generator file '{SMR_GEN_FILEPATH}' found.")
+	print("SMR generator file '{}' found.".format(SMR_GEN_FILEPATH))
 
 SMR_GEN_COMMAND = SMR_GEN_COMMAND_FORMAT.format(SMR_GEN_FILEPATH)
 SMR_GEN_LOCKFILE = os.path.join(os.environ['HOME'], 'smr_gen.lock')
@@ -793,7 +793,7 @@ if __name__ == "__main__":
 									Path(SMR_GEN_LOCKFILE).touch()
 									os.system(SMR_GEN_COMMAND)
 						elif os.path.exists(SMR_GEN_LOCKFILE):
-							print(f"Erasing SMR_GEN_LOCKFILE ({SMR_GEN_LOCKFILE}) now.")
+							print("Erasing SMR_GEN_LOCKFILE ({}) now.".format(SMR_GEN_LOCKFILE))
 							os.remove(SMR_GEN_LOCKFILE)
 						####
 
