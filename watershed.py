@@ -750,10 +750,10 @@ if __name__ == "__main__":
 			for file in file_list:
 				if os.path.isfile(file):
 					try:
-						if os.stat(file).st_size > 30000:
+						if os.stat(file).st_size > 60000:
 							os.system('cat /dev/null > {}'.format(file))
 							with open(ERROR_LOGFILE, 'a') as f:
-								f.write("[ {} ]\t--> '{}' contents wiped after exceeding 30kB\n".format(getTimestamp(), file))
+								f.write("[ {} ]\t--> '{}' contents wiped after exceeding 60KB\n".format(getTimestamp(), file))
 					except (OSError, FileNotFoundError) as exc:
 						exc_name = exc.__class__.__name__
 						exc_desc = str(exc)
