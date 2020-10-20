@@ -20,6 +20,7 @@ except:
 NO_WEEKEND_PRODUCTION = True
 TESTS_ONLY = False
 PRINT_DATA = False
+CROOKS_MODE = True
 
 TEMPLATE_TITLE = "SMR Form_Template"
 SHEET_TITLE = "SMR Form_{0}_{1}"
@@ -192,6 +193,14 @@ def get_month_data(sh=None):
 		ph_both = values[2].split(' / ')
 		ph_low = round(float(ph_both[0].strip()), 2)
 		ph_high = round(float(ph_both[1].strip()), 2)
+		if CROOKS_MODE: 								## Clamp pH
+			from random import randrange
+			if ph_low < 6.0:
+				ph_low = round((float(randrange(61, 69, 1)) / 10.0) + ((int(ph_low * 100.0) % 10) * 0.01), 2)
+			if ph_high < ph_low:
+				ph_high = round((float(randrange(1, 200, 1)) / 100.0) + ph_low, 2)
+			if ph_high > 12.0:
+				ph_high = round((float(randrange(111, 119, 1)) / 10.0) + ((int(ph_high * 100.0) % 10) * 0.01), 2)
 		data.append((day, gpd, ph_low, ph_high, is_weekend))
 		if PRINT_DATA:
 			print((day, gpd, ph_low, ph_high, is_weekend))
