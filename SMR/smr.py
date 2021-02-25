@@ -98,13 +98,13 @@ def get_smr_form(title=None):
 	except gspread.SpreadsheetNotFound:
 		template = gc.open(TEMPLATE_TITLE)
 		smr_spreadsheet = gc.copy(template.id, title=title, copy_permissions=True)
-	smr_form = smr_spreadsheet.sheet1
+	smr_form = smr_spreadsheet.get_worksheet(0)  # = smr_spreadsheet.sheet1
 	return smr_form 
 
 
 def test_get_smr_form():
 	smr_form = get_smr_form()
-	print("\n[test_get_smr_form]\nsmr_form = '{}'\n".format(smr_form))
+	print("\n[test_get_smr_form]\nsmr_form = {} ('{}')\n".format(smr_form, smr_form.title))
 
 
 #########################################################################################
@@ -163,7 +163,7 @@ def get_source_sheet(title=None):
 
 def test_get_source_sheet():
 	source_sheet = get_source_sheet()
-	print("\n[test_get_source_sheet]\nsource_sheet = '{}'\n".format(source_sheet))
+	print("\n[test_get_source_sheet]\nsource_sheet = {} ('{}')\n".format(source_sheet, source_sheet.title))
 
 #########################################################################################
 
@@ -181,22 +181,27 @@ def get_month_data(sh=None):
 	date_time_render_option = 'FORMATTED_STRING'
 	range_values = sh.batch_get(cell_ranges, major_dimension=major_dimension, value_render_option=value_render_option, date_time_render_option=date_time_render_option)
 
+	if PRINT_DATA:
+		print("\nrange_values[0] = {}".format((range_values[0])))
+
 	data = list()
-	for values in range_values[0]:
+	for i,values in enumerate(range_values[0]):
+		if PRINT_DATA:
+			print("\nvalues[{}] = {}".format(i, values))		
 		split_date = values[0].split('/')
 		day = int(split_date[1])
 		day_of_week = calendar.weekday(int(split_date[2]), int(split_date[0]), day)
 		is_weekend = 5 <= day_of_week <= 6
-		gpd = round(float(values[1]), 2)
+		gpd = round(float(values[1]), 2) if len(values) > 1 else 0
 		if gpd == 0:
 			gpd = 'no production'
-		ph_both = values[2].split(' / ')
-		ph_low = round(float(ph_both[0].strip()), 2)
-		ph_high = round(float(ph_both[1].strip()), 2)
-		if CROOKS_MODE: 								## Clamp pH
+		ph_both = values[2].split(' / ') if len(values) > 2 else None
+		ph_low  = round(float(ph_both[0].strip()), 2) if ph_both else 'no production'
+		ph_high = round(float(ph_both[1].strip()), 2) if ph_both else 'no production'
+		if CROOKS_MODE and not (isinstance(ph_low, str) or isinstance(ph_high, str)): 								## Clamp pH
 			from random import randrange
 			if ph_low < 6.0:
-				ph_low = round((float(randrange(61, 69, 1)) / 10.0) + ((int(ph_low * 100.0) % 10) * 0.01), 2)
+				ph_low  = round((float(randrange(61, 69, 1)) / 10.0) + ((int(ph_low * 100.0) % 10) * 0.01), 2)
 			if ph_high < ph_low:
 				ph_high = round((float(randrange(1, 200, 1)) / 100.0) + ph_low, 2)
 			if ph_high > 12.0:

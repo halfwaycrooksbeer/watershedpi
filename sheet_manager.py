@@ -25,7 +25,7 @@ except:
 		from watershedpi.flowreport import flowreport
 
 ON_DEV_BRANCH = False 	## CHANGE ME to False before running in the field
-SIMULATE_END_DATE = ON_DEV_BRANCH and True #False
+SIMULATE_END_DATE = ON_DEV_BRANCH and False
 SIM_TIMEDELTA_DAYS = 25
 SIM_TIMEDELTA_HOURS = 21
 SIM_TIMEDELTA_MINS = 12
@@ -1017,11 +1017,12 @@ class SheetManager(metaclass=Singleton):
 
 		#### UPDATE [9/25/20]
 		if MODIFY_WEEKENDS:
-			split_date = date.split('/')
+			# split_date = date.split('/')
 			try:
-				month = int(split_date[0])
-				day = int(split_date[1])
-				year = int(split_date[2])
+				# month = int(split_date[0])
+				# day = int(split_date[1])
+				# year = int(split_date[2])
+				month, day, year = [int(d) for d in date.split('/')]
 				# if is_weekend(month, day, year):
 				# 	override = round(random.uniform(0.00, 49.99), 2)
 				# 	if override < day_gallons:
