@@ -792,6 +792,12 @@ if __name__ == "__main__":
 						if prev_entry_time_obj.day != entry_time_obj.day:
 							end_of_day_reached = True
 
+						#### UPDATE [ 1/7/2021 ]
+						if prev_entry_time_obj.year < entry_time_obj.year:
+							print("[watershed] END DATE REACHED (#1):  Happy New Year!")
+							end_date_reached = True
+						####
+
 						#### UPDATE [9/24/20]
 						if entry_time_obj.day == SMR_DAY_OF_MONTH:
 							if not os.path.exists(SMR_GEN_LOCKFILE):
@@ -828,23 +834,23 @@ if __name__ == "__main__":
 
 						## Sufficient?
 						dt_now = sheet_manager.get_datetime_now()
-						if dt_now > sm.cursheet_end_date:
-							print("dt.datetime.now() > sm.cursheet_end_date")
+						if dt_now > (sm.cursheet_end_date - dt.timedelta(seconds=INTERVAL)):
+							print("[watershed] END DATE REACHED (#2):  dt.datetime.now() > sm.cursheet_end_date")
 							print("\ttoday   :\t{}".format(dt_now))
 							print("\tend date:\t{}".format(sm.cursheet_end_date))
 							end_date_reached = True
 
 						## Redundant?
-						if sm.need_newsheet_check(entry_time=entry_time):
-							print("[watershed] END DATE REACHED (#1):\t{}".format(entry_time))
+						if not end_date_reached and sm.need_newsheet_check(entry_time=entry_time):
+							print("[watershed] END DATE REACHED (#3):\t{}".format(entry_time))
 							end_date_reached = True
-
-						if end_of_day_reached:
-							print("\n~~~  E N D _  O F _ D A Y _  R E A C H E D  ~~~\n")
-							break
 
 						if end_date_reached:
 							print("\n~~~  E N D _  D A T E _  R E A C H E D  ~~~\n")
+							break
+
+						if end_of_day_reached:
+							print("\n~~~  E N D _  O F _ D A Y _  R E A C H E D  ~~~\n")
 							break
 
 						level = 0.0
@@ -882,24 +888,31 @@ if __name__ == "__main__":
 						sm.append_data(payload)
 					###
 
-				if end_of_day_reached:
-					print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
-					sm.get_results(prev_entry_time_obj)
-					prev_entry_time_obj = entry_time_obj
-					entry_time = getTimestamp()
-					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
-					end_of_day_reached = False
+				if end_date_reached or end_of_day_reached:
+					### UPDATE [ 1/7/2021 ]
+					results_published = False
+					if end_date_reached:
+						end_date_reached = False
+						# final_day_of_month = sheet_manager.get_dt_for_last_day_of_month(sm.cursheet_end_date)
+						if not results_published:
+							print("[watershed] main calling SheetManager.get_results() for date '{}' due to end_date_reached".format(sm.cursheet_end_date_str))
+							sm.get_results(sm.cursheet_end_date)
+							results_published = True
+						print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
+						sm.generate_newsheet()
+						
+					if end_of_day_reached:
+						end_of_day_reached = False
+						if not results_published:
+							print("[watershed] main calling SheetManager.get_results() due to end_of_day_reached")
+							sm.get_results(prev_entry_time_obj)
+							results_published = True
 
-				if end_date_reached:
-					# final_day_of_month = sheet_manager.get_dt_for_last_day_of_month(sm.cursheet_end_date)
-					print("[watershed] main calling SheetManager.get_results() for date '{}' due to end_date_reached".format(sm.cursheet_end_date_str))
-					sm.get_results(sm.cursheet_end_date)
-					print("[watershed] main calling SheetManager.generate_newsheet() due to end_date_reached")
-					sm.generate_newsheet()
 					prev_entry_time_obj = entry_time_obj
 					entry_time = getTimestamp()
-					entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)
-					end_date_reached = False
+					# entry_time_obj = sheet_manager.datestr_to_datetime(entry_time)   ## <- Already gets set at the top of each loop iteration
+					###
+
 
 			# except KeyboardInterrupt:
 			# 	break	
