@@ -360,9 +360,9 @@ class PHSensor(SensorBase): 	## PH500
 				self._pH = 14.0
 		else:
 			if self._pH < 6.0:
-				self._pH = (float(random.randrange(61, 69, 1)) / 10.0) + ((int(self._pH * 100.0) % 10) * 0.01)
+				self._pH = (float(random.randrange(60, 79, 1)) / 10.0) + ((int(self._pH * 100.0) % 10) * 0.01)
 			elif self._pH > 12.0:
-				self._pH = (float(random.randrange(111, 119, 1)) / 10.0) + ((int(self._pH * 100.0) % 10) * 0.01)
+				self._pH = (float(random.randrange(91, 119, 1)) / 10.0) + ((int(self._pH * 100.0) % 10) * 0.01)
 		return self._pH
 
 

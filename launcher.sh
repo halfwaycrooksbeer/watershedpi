@@ -9,6 +9,7 @@ SEP="/"
 ERROR_LOGFILE="$HOME${SEP}hc_errors.log"
 REPO_PATH="$HOME${SEP}watershedpi"
 REPO_URL="https://github.com/VicerExciser/watershedpi.git"
+# REPO_URL="https://github.com/halfwaycrooksbeer/watershedpi.git"
 
 ANSI_INSTALLED=$FAIL
 MAX_FAILS=20  # make this like 25 or 30, perhaps

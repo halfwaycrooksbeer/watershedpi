@@ -120,6 +120,7 @@ if [ -d "watershedpi" ]; then
 	ln -f watershedpi/launcher.sh .
 else
     git clone https://github.com/VicerExciser/watershedpi.git
+    # git clone https://github.com/halfwaycrooksbeer/watershedpi.git
     sleep 3s
     ln -f watershedpi/launcher.sh .
 fi
