@@ -15,7 +15,10 @@ MASTER_SHEET_NAME = "Flow"
 CREDS_FILE = os.path.join('/', *(os.path.abspath(__file__).split('/')[:-1]), "flowreport_key.json")
 
 def update_master_sheet_results(date, gpd):
-	""" Both params `date` and `gpd` should be strings. """
+	"""
+		`date`: string  -  Format = "%m/%d/%Y"
+		`gpd` : string  -  Float number, may or may not contain ',' separators for thousands
+	"""
 	try:
 		import gspread
 		gc = gspread.service_account(filename=CREDS_FILE)
@@ -34,18 +37,14 @@ def update_master_sheet_results(date, gpd):
 		insert_row -= 1
 
 	if NO_WEEKEND_PRODUCTION:
-		# split_date = date.split('/')
-		try:
-			# month = int(split_date[0])
-			# day = int(split_date[1])
-			# year = int(split_date[2])
-			month, day, year = [int(d) for d in date.split('/')]
-			day_of_week = calendar.weekday(year, month, day)
-			is_weekend = 5 <= day_of_week <= 6
-			if is_weekend:
-				gpd = 'no production'
-		except ValueError:
-			pass
+		# try:
+		month, day, year = [int(d) for d in date.split('/')]
+		day_of_week = calendar.weekday(year, month, day)
+		is_weekend = 5 <= day_of_week <= 6
+		if is_weekend:
+			gpd = 'no production'
+		# except ValueError:
+		# 	pass
 
 	ws.insert_row([date, gpd], index=insert_row, value_input_option='USER_ENTERED')
 	ws.update_acell('C{}'.format(insert_row), ws.acell('C{}'.format(insert_row-1)).value)

@@ -268,7 +268,7 @@ def main():
 	smr_url = get_smr_url(smr=smr)
 	msg = "[halfwaycrooks] A new SMR form for {} {} has been auto-generated!\n\nView the form here:  {}\n\n(notification sent by Austin's robot)\n".format(get_month_name(), year, smr_url)
 
-	for email in ('joran@halfwaycrooks.beer', 'shawn@halfwaycrooks.beer', 'acondict11@gmail.com', ):
+	for email in ('joran@halfwaycrooks.beer', 'shawn@halfwaycrooks.beer', 'acondict11@gmail.com', 'halfwaycrooksbeer@gmail.com', ):
 		gc.insert_permission(
 			smr_spreadsheet.id,
 			email,

@@ -1,0 +1,788 @@
+Searching for input file: /Users/acondict/Documents/Watershed/watershedpi/generate_data/inputs/july_data_tuples.txt
+Data tuples fetched for july
+************************************
+************************************
+[             7/2021           ]
+[ 2021-07-01 ] <---> [ 7/1/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     THURSDAY  (occur. #1)
+>> Is Weekend:      False
+>> Gallons per Day: 2,025.02
+>> pH Minumum:      6.00
+>> pH Maximum:      11.99
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-02 ] <---> [ 7/2/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     FRIDAY  (occur. #1)
+>> Is Weekend:      False
+>> Gallons per Day: 2,217.43
+>> pH Minumum:      6.00
+>> pH Maximum:      12.00
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-03 ] <---> [ 7/3/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     SATURDAY  (occur. #1)
+>> Is Weekend:      True
+>> Gallons per Day: 43.71
+>> pH Minumum:      6.01
+>> pH Maximum:      11.30
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-04 ] <---> [ 7/4/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     SUNDAY  (occur. #1)
+>> Is Weekend:      True
+>> Gallons per Day: 43.46
+>> pH Minumum:      6.01
+>> pH Maximum:      9.57
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-05 ] <---> [ 7/5/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     MONDAY  (occur. #1)
+>> Is Weekend:      False
+>> Gallons per Day: 2,051.54
+>> pH Minumum:      6.00
+>> pH Maximum:      7.89
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-06 ] <---> [ 7/6/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     TUESDAY  (occur. #1)
+>> Is Weekend:      False
+>> Gallons per Day: 2,345.35
+>> pH Minumum:      6.01
+>> pH Maximum:      11.97
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-07 ] <---> [ 7/7/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     1
+>> Day of Week:     WEDNESDAY  (occur. #1)
+>> Is Weekend:      False
+>> Gallons per Day: 2,569.23
+>> pH Minumum:      6.00
+>> pH Maximum:      11.98
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-08 ] <---> [ 7/8/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     THURSDAY  (occur. #2)
+>> Is Weekend:      False
+>> Gallons per Day: 2,307.34
+>> pH Minumum:      6.01
+>> pH Maximum:      11.87
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-09 ] <---> [ 7/9/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     FRIDAY  (occur. #2)
+>> Is Weekend:      False
+>> Gallons per Day: 2,720.57
+>> pH Minumum:      6.00
+>> pH Maximum:      11.85
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-10 ] <---> [ 7/10/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     SATURDAY  (occur. #2)
+>> Is Weekend:      True
+>> Gallons per Day: 10.46
+>> pH Minumum:      7.14
+>> pH Maximum:      8.50
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-11 ] <---> [ 7/11/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     SUNDAY  (occur. #2)
+>> Is Weekend:      True
+>> Gallons per Day: 22.68
+>> pH Minumum:      6.02
+>> pH Maximum:      8.24
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-12 ] <---> [ 7/12/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     MONDAY  (occur. #2)
+>> Is Weekend:      False
+>> Gallons per Day: 1,869.45
+>> pH Minumum:      6.00
+>> pH Maximum:      11.97
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-13 ] <---> [ 7/13/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     TUESDAY  (occur. #2)
+>> Is Weekend:      False
+>> Gallons per Day: 1,693.94
+>> pH Minumum:      6.00
+>> pH Maximum:      9.19
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-14 ] <---> [ 7/14/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     2
+>> Day of Week:     WEDNESDAY  (occur. #2)
+>> Is Weekend:      False
+>> Gallons per Day: 2,418.06
+>> pH Minumum:      6.00
+>> pH Maximum:      11.08
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-15 ] <---> [ 7/15/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     THURSDAY  (occur. #3)
+>> Is Weekend:      False
+>> Gallons per Day: 2,672.52
+>> pH Minumum:      6.00
+>> pH Maximum:      11.99
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-16 ] <---> [ 7/16/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     FRIDAY  (occur. #3)
+>> Is Weekend:      False
+>> Gallons per Day: 1,986.01
+>> pH Minumum:      6.00
+>> pH Maximum:      11.96
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-17 ] <---> [ 7/17/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     SATURDAY  (occur. #3)
+>> Is Weekend:      True
+>> Gallons per Day: 47.91
+>> pH Minumum:      7.03
+>> pH Maximum:      8.26
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-18 ] <---> [ 7/18/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     SUNDAY  (occur. #3)
+>> Is Weekend:      True
+>> Gallons per Day: 11.42
+>> pH Minumum:      7.49
+>> pH Maximum:      8.43
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-19 ] <---> [ 7/19/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     MONDAY  (occur. #3)
+>> Is Weekend:      False
+>> Gallons per Day: 1,870.06
+>> pH Minumum:      6.00
+>> pH Maximum:      11.83
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-20 ] <---> [ 7/20/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     TUESDAY  (occur. #3)
+>> Is Weekend:      False
+>> Gallons per Day: 2,077.46
+>> pH Minumum:      6.00
+>> pH Maximum:      11.96
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-21 ] <---> [ 7/21/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     3
+>> Day of Week:     WEDNESDAY  (occur. #3)
+>> Is Weekend:      False
+>> Gallons per Day: 1,911.10
+>> pH Minumum:      6.14
+>> pH Maximum:      11.19
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-22 ] <---> [ 7/22/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     THURSDAY  (occur. #4)
+>> Is Weekend:      False
+>> Gallons per Day: 2,399.08
+>> pH Minumum:      6.00
+>> pH Maximum:      12.00
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-23 ] <---> [ 7/23/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     FRIDAY  (occur. #4)
+>> Is Weekend:      False
+>> Gallons per Day: 2,065.69
+>> pH Minumum:      6.00
+>> pH Maximum:      12.00
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-24 ] <---> [ 7/24/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     SATURDAY  (occur. #4)
+>> Is Weekend:      True
+>> Gallons per Day: 18.76
+>> pH Minumum:      6.85
+>> pH Maximum:      8.02
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-25 ] <---> [ 7/25/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     SUNDAY  (occur. #4)
+>> Is Weekend:      True
+>> Gallons per Day: 7.60
+>> pH Minumum:      6.58
+>> pH Maximum:      8.31
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-26 ] <---> [ 7/26/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     MONDAY  (occur. #4)
+>> Is Weekend:      False
+>> Gallons per Day: 1,650.53
+>> pH Minumum:      6.00
+>> pH Maximum:      11.91
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-27 ] <---> [ 7/27/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     TUESDAY  (occur. #4)
+>> Is Weekend:      False
+>> Gallons per Day: 1,725.88
+>> pH Minumum:      6.00
+>> pH Maximum:      11.87
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-28 ] <---> [ 7/28/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     4
+>> Day of Week:     WEDNESDAY  (occur. #4)
+>> Is Weekend:      False
+>> Gallons per Day: 2,346.93
+>> pH Minumum:      6.00
+>> pH Maximum:      12.00
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-29 ] <---> [ 7/29/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     5
+>> Day of Week:     THURSDAY  (occur. #5)
+>> Is Weekend:      False
+>> Gallons per Day: 2,071.16
+>> pH Minumum:      6.00
+>> pH Maximum:      11.69
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-30 ] <---> [ 7/30/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     5
+>> Day of Week:     FRIDAY  (occur. #5)
+>> Is Weekend:      False
+>> Gallons per Day: 2,455.86
+>> pH Minumum:      6.00
+>> pH Maximum:      11.83
+
+************************************
+
+[             7/2021           ]
+[ 2021-07-31 ] <---> [ 7/31/2021 ]
+
+>> Month of Year:   JULY
+>> Week Number:     5
+>> Day of Week:     SATURDAY  (occur. #5)
+>> Is Weekend:      True
+>> Gallons per Day: 5.15
+>> pH Minumum:      6.07
+>> pH Maximum:      11.01
+
+************************************
+
+
+DATA REPORT FOR MONTH [7/2021]:
+{
+    "7/2021": {
+        "1": {
+            "id": "1",
+            "date": "datetime.date(2021, 7, 1)",
+            "day_of_week": "WeekdayEnum.THURSDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 2025.02,
+            "ph_min": 6.0,
+            "ph_max": 11.99
+        },
+        "2": {
+            "id": "2",
+            "date": "datetime.date(2021, 7, 2)",
+            "day_of_week": "WeekdayEnum.FRIDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 2217.43,
+            "ph_min": 6.0,
+            "ph_max": 12.0
+        },
+        "3": {
+            "id": "3",
+            "date": "datetime.date(2021, 7, 3)",
+            "day_of_week": "WeekdayEnum.SATURDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 43.71,
+            "ph_min": 6.01,
+            "ph_max": 11.3
+        },
+        "4": {
+            "id": "4",
+            "date": "datetime.date(2021, 7, 4)",
+            "day_of_week": "WeekdayEnum.SUNDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 43.46,
+            "ph_min": 6.01,
+            "ph_max": 9.57
+        },
+        "5": {
+            "id": "5",
+            "date": "datetime.date(2021, 7, 5)",
+            "day_of_week": "WeekdayEnum.MONDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 2051.54,
+            "ph_min": 6.0,
+            "ph_max": 7.89
+        },
+        "6": {
+            "id": "6",
+            "date": "datetime.date(2021, 7, 6)",
+            "day_of_week": "WeekdayEnum.TUESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 2345.35,
+            "ph_min": 6.01,
+            "ph_max": 11.97
+        },
+        "7": {
+            "id": "7",
+            "date": "datetime.date(2021, 7, 7)",
+            "day_of_week": "WeekdayEnum.WEDNESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 1,
+            "weekday_occurrence": 1,
+            "gallons_per_day": 2569.23,
+            "ph_min": 6.0,
+            "ph_max": 11.98
+        },
+        "8": {
+            "id": "8",
+            "date": "datetime.date(2021, 7, 8)",
+            "day_of_week": "WeekdayEnum.THURSDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 2307.34,
+            "ph_min": 6.01,
+            "ph_max": 11.87
+        },
+        "9": {
+            "id": "9",
+            "date": "datetime.date(2021, 7, 9)",
+            "day_of_week": "WeekdayEnum.FRIDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 2720.57,
+            "ph_min": 6.0,
+            "ph_max": 11.85
+        },
+        "10": {
+            "id": "10",
+            "date": "datetime.date(2021, 7, 10)",
+            "day_of_week": "WeekdayEnum.SATURDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 10.46,
+            "ph_min": 7.14,
+            "ph_max": 8.5
+        },
+        "11": {
+            "id": "11",
+            "date": "datetime.date(2021, 7, 11)",
+            "day_of_week": "WeekdayEnum.SUNDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 22.68,
+            "ph_min": 6.02,
+            "ph_max": 8.24
+        },
+        "12": {
+            "id": "12",
+            "date": "datetime.date(2021, 7, 12)",
+            "day_of_week": "WeekdayEnum.MONDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 1869.45,
+            "ph_min": 6.0,
+            "ph_max": 11.97
+        },
+        "13": {
+            "id": "13",
+            "date": "datetime.date(2021, 7, 13)",
+            "day_of_week": "WeekdayEnum.TUESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 1693.94,
+            "ph_min": 6.0,
+            "ph_max": 9.19
+        },
+        "14": {
+            "id": "14",
+            "date": "datetime.date(2021, 7, 14)",
+            "day_of_week": "WeekdayEnum.WEDNESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 2,
+            "weekday_occurrence": 2,
+            "gallons_per_day": 2418.06,
+            "ph_min": 6.0,
+            "ph_max": 11.08
+        },
+        "15": {
+            "id": "15",
+            "date": "datetime.date(2021, 7, 15)",
+            "day_of_week": "WeekdayEnum.THURSDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 2672.52,
+            "ph_min": 6.0,
+            "ph_max": 11.99
+        },
+        "16": {
+            "id": "16",
+            "date": "datetime.date(2021, 7, 16)",
+            "day_of_week": "WeekdayEnum.FRIDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 1986.01,
+            "ph_min": 6.0,
+            "ph_max": 11.96
+        },
+        "17": {
+            "id": "17",
+            "date": "datetime.date(2021, 7, 17)",
+            "day_of_week": "WeekdayEnum.SATURDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 47.91,
+            "ph_min": 7.03,
+            "ph_max": 8.26
+        },
+        "18": {
+            "id": "18",
+            "date": "datetime.date(2021, 7, 18)",
+            "day_of_week": "WeekdayEnum.SUNDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 11.42,
+            "ph_min": 7.49,
+            "ph_max": 8.43
+        },
+        "19": {
+            "id": "19",
+            "date": "datetime.date(2021, 7, 19)",
+            "day_of_week": "WeekdayEnum.MONDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 1870.06,
+            "ph_min": 6.0,
+            "ph_max": 11.83
+        },
+        "20": {
+            "id": "20",
+            "date": "datetime.date(2021, 7, 20)",
+            "day_of_week": "WeekdayEnum.TUESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 2077.46,
+            "ph_min": 6.0,
+            "ph_max": 11.96
+        },
+        "21": {
+            "id": "21",
+            "date": "datetime.date(2021, 7, 21)",
+            "day_of_week": "WeekdayEnum.WEDNESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 3,
+            "weekday_occurrence": 3,
+            "gallons_per_day": 1911.1,
+            "ph_min": 6.14,
+            "ph_max": 11.19
+        },
+        "22": {
+            "id": "22",
+            "date": "datetime.date(2021, 7, 22)",
+            "day_of_week": "WeekdayEnum.THURSDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 2399.08,
+            "ph_min": 6.0,
+            "ph_max": 12.0
+        },
+        "23": {
+            "id": "23",
+            "date": "datetime.date(2021, 7, 23)",
+            "day_of_week": "WeekdayEnum.FRIDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 2065.69,
+            "ph_min": 6.0,
+            "ph_max": 12.0
+        },
+        "24": {
+            "id": "24",
+            "date": "datetime.date(2021, 7, 24)",
+            "day_of_week": "WeekdayEnum.SATURDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 18.76,
+            "ph_min": 6.85,
+            "ph_max": 8.02
+        },
+        "25": {
+            "id": "25",
+            "date": "datetime.date(2021, 7, 25)",
+            "day_of_week": "WeekdayEnum.SUNDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 7.6,
+            "ph_min": 6.58,
+            "ph_max": 8.31
+        },
+        "26": {
+            "id": "26",
+            "date": "datetime.date(2021, 7, 26)",
+            "day_of_week": "WeekdayEnum.MONDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 1650.53,
+            "ph_min": 6.0,
+            "ph_max": 11.91
+        },
+        "27": {
+            "id": "27",
+            "date": "datetime.date(2021, 7, 27)",
+            "day_of_week": "WeekdayEnum.TUESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 1725.88,
+            "ph_min": 6.0,
+            "ph_max": 11.87
+        },
+        "28": {
+            "id": "28",
+            "date": "datetime.date(2021, 7, 28)",
+            "day_of_week": "WeekdayEnum.WEDNESDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 4,
+            "weekday_occurrence": 4,
+            "gallons_per_day": 2346.93,
+            "ph_min": 6.0,
+            "ph_max": 12.0
+        },
+        "29": {
+            "id": "29",
+            "date": "datetime.date(2021, 7, 29)",
+            "day_of_week": "WeekdayEnum.THURSDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 5,
+            "weekday_occurrence": 5,
+            "gallons_per_day": 2071.16,
+            "ph_min": 6.0,
+            "ph_max": 11.69
+        },
+        "30": {
+            "id": "30",
+            "date": "datetime.date(2021, 7, 30)",
+            "day_of_week": "WeekdayEnum.FRIDAY",
+            "is_weekend": false,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 5,
+            "weekday_occurrence": 5,
+            "gallons_per_day": 2455.86,
+            "ph_min": 6.0,
+            "ph_max": 11.83
+        },
+        "31": {
+            "id": "31",
+            "date": "datetime.date(2021, 7, 31)",
+            "day_of_week": "WeekdayEnum.SATURDAY",
+            "is_weekend": true,
+            "month_of_year": "MonthEnum.JULY",
+            "week_number": 5,
+            "weekday_occurrence": 5,
+            "gallons_per_day": 5.15,
+            "ph_min": 6.07,
+            "ph_max": 11.01
+        }
+    }
+}
+
+
+File Saved: /Users/acondict/Documents/Watershed/watershedpi/generate_data/outputs/2021_july_data.json
