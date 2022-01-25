@@ -54,7 +54,7 @@ WARM_UP_LEVEL_SENSOR = True
 
 #### UPDATE [9/24/20]
 from pathlib import Path
-SMR_DAY_OF_MONTH = 20  	## Auto-generate new SMR form on the 20th day of each month
+SMR_DAY_OF_MONTH = 5  	## Auto-generate new SMR form on the 5th day of each month
 #SMR_GEN_COMMAND = '.{}/SMR/smr.py &'.format(os.getcwd())
 SMR_GEN_ENABLED = True
 SMR_GEN_FILEPATH_FORMAT = '{0}/SMR/smr.py'
