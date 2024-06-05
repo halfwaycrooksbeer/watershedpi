@@ -1,0 +1,10 @@
+TODO (generate_data):
+
+[ ] - Add support for year CLI input for: 
+		generate_month_data.py, 
+		parse_data_tuples_to_json.py,
+		correlate_outputs_for_month.py
+
+[ ] - Script to convert any Flowreport CSV / XLSX / Google Sheet into list of data tuples
+[ ] - parse_data_tuples_to_json.py - if no data tuples file found, read month data from Google Sheet & generate tuples
+[ ] - correlate_outputs_for_month.py - add feature for writing data back to Google Sheet / SMR
